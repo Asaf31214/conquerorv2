@@ -1,0 +1,71 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: conquerorv2
+  namespace: '520018356558'
+  selfLink: /apis/serving.knative.dev/v1/namespaces/520018356558/services/conquerorv2
+  uid: d00a9184-a240-4e6e-b782-226cb107764a
+  resourceVersion: AAYr7yMa5Nw
+  generation: 20
+  creationTimestamp: '2025-01-17T20:53:45.019866Z'
+  labels:
+    commit-sha: 64028d2293461624edf42729af51ec49470ed839
+    gcb-build-id: 448f5535-36b9-41c1-8b19-4ff0d946b260
+    gcb-trigger-id: 80d84f9e-283e-47ad-a4f5-ba0ae7a7637e
+    gcb-trigger-region: global
+    managed-by: gcp-cloud-build-deploy-cloud-run
+    cloud.googleapis.com/location: europe-west1
+  annotations:
+    serving.knative.dev/creator: asaf.kanlipicak@gmail.com
+    serving.knative.dev/lastModifier: asaf.kanlipicak@gmail.com
+    run.googleapis.com/client-name: cloud-console
+    run.googleapis.com/operation-id: 0ff7a094-8f0f-464b-b77a-059a17cff4c2
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/urls: >-
+      ["https://conquerorv2-520018356558.europe-west1.run.app","https://conquerorv2-yrfc2p4dna-ew.a.run.app"]
+spec:
+  template:
+    metadata:
+      labels:
+        client.knative.dev/nonce: 9da742c6-0207-49c7-bb04-bcd9b3a7a64b
+        commit-sha: 64028d2293461624edf42729af51ec49470ed839
+        gcb-build-id: 448f5535-36b9-41c1-8b19-4ff0d946b260
+        gcb-trigger-id: 80d84f9e-283e-47ad-a4f5-ba0ae7a7637e
+        gcb-trigger-region: global
+        managed-by: gcp-cloud-build-deploy-cloud-run
+        run.googleapis.com/startupProbeType: Default
+      annotations:
+        autoscaling.knative.dev/maxScale: '10'
+        run.googleapis.com/client-name: cloud-console
+        run.googleapis.com/startup-cpu-boost: 'true'
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      serviceAccountName: 520018356558-compute@developer.gserviceaccount.com
+      containers:
+      - name: placeholder-1
+        image: >-
+          europe-west1-docker.pkg.dev/noted-cider-447509-b4/cloud-run-source-deploy/conquerorv2/conquerorv2:64028d2293461624edf42729af51ec49470ed839
+        ports:
+        - name: http1
+          containerPort: 8080
+        env:
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: '1'
+              name: conqueror-api-key
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        startupProbe:
+          timeoutSeconds: 240
+          periodSeconds: 240
+          failureThreshold: 1
+          tcpSocket:
+            port: 8080
+  traffic:
+  - percent: 100
+    latestRevision: true
