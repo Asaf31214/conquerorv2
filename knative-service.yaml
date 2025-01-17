@@ -5,12 +5,12 @@ metadata:
   namespace: '520018356558'
   selfLink: /apis/serving.knative.dev/v1/namespaces/520018356558/services/conquerorv2
   uid: d00a9184-a240-4e6e-b782-226cb107764a
-  resourceVersion: AAYr7yMa5Nw
-  generation: 20
+  resourceVersion: AAYr759tN8w
+  generation: 25
   creationTimestamp: '2025-01-17T20:53:45.019866Z'
   labels:
-    commit-sha: 64028d2293461624edf42729af51ec49470ed839
-    gcb-build-id: 448f5535-36b9-41c1-8b19-4ff0d946b260
+    commit-sha: d67981cf4539a008dcafb578aa721c0c01ac799f
+    gcb-build-id: a80af807-d125-405c-8011-d5dd83f995e0
     gcb-trigger-id: 80d84f9e-283e-47ad-a4f5-ba0ae7a7637e
     gcb-trigger-region: global
     managed-by: gcp-cloud-build-deploy-cloud-run
@@ -19,7 +19,7 @@ metadata:
     serving.knative.dev/creator: asaf.kanlipicak@gmail.com
     serving.knative.dev/lastModifier: asaf.kanlipicak@gmail.com
     run.googleapis.com/client-name: cloud-console
-    run.googleapis.com/operation-id: 0ff7a094-8f0f-464b-b77a-059a17cff4c2
+    run.googleapis.com/operation-id: 8c33a478-9344-49a4-89ae-6a9f34a576e0
     run.googleapis.com/ingress: all
     run.googleapis.com/ingress-status: all
     run.googleapis.com/urls: >-
@@ -28,9 +28,9 @@ spec:
   template:
     metadata:
       labels:
-        client.knative.dev/nonce: 9da742c6-0207-49c7-bb04-bcd9b3a7a64b
-        commit-sha: 64028d2293461624edf42729af51ec49470ed839
-        gcb-build-id: 448f5535-36b9-41c1-8b19-4ff0d946b260
+        client.knative.dev/nonce: 56da6cd6-6b75-4dea-8167-aa3f203b3360
+        commit-sha: d67981cf4539a008dcafb578aa721c0c01ac799f
+        gcb-build-id: a80af807-d125-405c-8011-d5dd83f995e0
         gcb-trigger-id: 80d84f9e-283e-47ad-a4f5-ba0ae7a7637e
         gcb-trigger-region: global
         managed-by: gcp-cloud-build-deploy-cloud-run
@@ -46,18 +46,18 @@ spec:
       containers:
       - name: placeholder-1
         image: >-
-          europe-west1-docker.pkg.dev/noted-cider-447509-b4/cloud-run-source-deploy/conquerorv2/conquerorv2:64028d2293461624edf42729af51ec49470ed839
+          europe-west1-docker.pkg.dev/noted-cider-447509-b4/cloud-run-source-deploy/conquerorv2/conquerorv2:d67981cf4539a008dcafb578aa721c0c01ac799f
         ports:
         - name: http1
           containerPort: 8080
         env:
-          - name: API_KEY
-            valueFrom:
-              secretKeyRef:
-                key: 'latest'
-                name: conqueror-api-key
-          - name: ENVIRONMENT
-            value: CLOUD
+        - name: ENVIRONMENT
+          value: CLOUD
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: conqueror-api-key
         resources:
           limits:
             cpu: 1000m
