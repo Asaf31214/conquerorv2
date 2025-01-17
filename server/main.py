@@ -16,7 +16,7 @@ async def require_api_key(x_api_key: str = Header(None)):
         )
 
 
-app = FastAPI(dependencies=[Depends(require_api_key)])
+app = FastAPI()
 
 
 @app.get("/")
