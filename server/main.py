@@ -10,9 +10,6 @@ API_KEY = os.getenv("API_KEY")
 
 
 async def require_api_key(x_api_key: str = Header(None)):
-    print(f"API_KEY: {API_KEY}")
-    print(f"x_api_key: {x_api_key}")
-    print(f"ENVIRONMENT: {ENVIRONMENT}")
     if ENVIRONMENT == "CLOUD" and x_api_key != API_KEY:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
