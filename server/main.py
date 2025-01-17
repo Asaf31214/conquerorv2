@@ -20,7 +20,8 @@ def root():
 @app.get("/env")
 def env():
     key = os.getenv("API_KEY")
-    return {"key": key}
+    env_ = os.getenv("ENVIRONMENT")
+    return {"key": key, "env": env_}
 
 
 if __name__ == "__main__":
