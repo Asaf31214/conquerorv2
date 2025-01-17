@@ -2,7 +2,7 @@ import os
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, status, Depends
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 
 load_dotenv()
 ENVIRONMENT = os.environ.get("ENVIRONMENT")
@@ -15,7 +15,10 @@ async def require_api_key(x_api_key: str = Header(None)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid API key",
         )
+
+
 app = FastAPI(dependencies=[Depends(require_api_key)])
+
 
 @app.get("/health")
 async def health_check():
@@ -25,7 +28,6 @@ async def health_check():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
-
 
 
 if __name__ == "__main__":
