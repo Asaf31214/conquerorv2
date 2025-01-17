@@ -11,7 +11,7 @@ def health_check():
 
 @app.get("/")
 def root():
-    return {"message": "Hello World"}
+    return {"message": "Hello World 2"}
 
 
 if __name__ == "__main__":
