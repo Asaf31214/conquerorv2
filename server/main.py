@@ -1,3 +1,5 @@
+import os
+
 import uvicorn
 from fastapi import FastAPI
 
@@ -12,6 +14,11 @@ def health_check():
 @app.get("/")
 def root():
     return {"message": "Hello World 3"}
+
+@app.get("/env")
+def env():
+    key = os.getenv("API_KEY")
+    return {"key": key}
 
 
 if __name__ == "__main__":

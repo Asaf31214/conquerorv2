@@ -18,6 +18,7 @@ steps:
         '--region', 'eu-west1',
         '--platform', 'managed',
         '--allow-unauthenticated',
+        '--set-secrets=API_KEY=conqueror-api-key:latest'
       ]
 
 images:
