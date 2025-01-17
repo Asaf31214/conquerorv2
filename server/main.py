@@ -1,8 +1,8 @@
 import os
 
 import uvicorn
-from fastapi import FastAPI
 from dotenv import load_dotenv
+from fastapi import FastAPI
 
 load_dotenv()
 app = FastAPI()
@@ -16,6 +16,7 @@ async def health_check():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
 
 @app.get("/env")
 async def env():
