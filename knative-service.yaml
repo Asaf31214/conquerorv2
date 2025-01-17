@@ -51,13 +51,13 @@ spec:
         - name: http1
           containerPort: 8080
         env:
-        - name: API_KEY
-          valueFrom:
-            secretKeyRef:
-              key: 'latest'
-              name: conqueror-api-key
-        - name: ENV
-          value: CLOUD
+          - name: API_KEY
+            valueFrom:
+              secretKeyRef:
+                key: 'latest'
+                name: conqueror-api-key
+          - name: ENVIRONMENT
+            value: CLOUD
         resources:
           limits:
             cpu: 1000m

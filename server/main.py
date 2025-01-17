@@ -2,11 +2,20 @@ import os
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, status, Depends
 
 load_dotenv()
-app = FastAPI()
+ENVIRONMENT = os.environ.get("ENVIRONMENT")
+API_KEY = os.getenv("API_KEY")
 
+
+async def require_api_key(x_api_key: str = Header(None)):
+    if ENVIRONMENT == "CLOUD" and x_api_key != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid API key",
+        )
+app = FastAPI(dependencies=[Depends(require_api_key)])
 
 @app.get("/health")
 async def health_check():
@@ -17,12 +26,6 @@ async def health_check():
 async def root():
     return {"message": "Hello World"}
 
-
-@app.get("/env")
-async def env():
-    key = os.environ.get("API_KEY")
-    env_ = os.environ.get("ENV")
-    return {"key": key, "env": env_}
 
 
 if __name__ == "__main__":
