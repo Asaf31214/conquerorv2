@@ -54,8 +54,10 @@ spec:
         - name: API_KEY
           valueFrom:
             secretKeyRef:
-              key: '1'
+              key: 'latest'
               name: conqueror-api-key
+        - name: ENV
+          value: CLOUD
         resources:
           limits:
             cpu: 1000m

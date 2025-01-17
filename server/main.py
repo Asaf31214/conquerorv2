@@ -21,7 +21,8 @@ async def root():
 @app.get("/env")
 async def env():
     key = os.environ.get("API_KEY")
-    return {"key": key}
+    env_ = os.environ.get("ENV")
+    return {"key": key, "env": env_}
 
 
 if __name__ == "__main__":
