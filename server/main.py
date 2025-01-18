@@ -1,8 +1,13 @@
 import uvicorn
 from fastapi import FastAPI
 
-app = FastAPI()
 
+async def startup():
+    print("Starting up")
+
+async def shutdown():
+    print("Shutting down")
+app = FastAPI(on_startup=[startup], on_shutdown=[shutdown])
 
 @app.get("/health")
 async def health_check():
@@ -15,4 +20,4 @@ async def root():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
