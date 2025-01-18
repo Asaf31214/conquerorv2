@@ -1,0 +1,18 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: conqueror
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: gcr.io/$PROJECT_ID/conqueror:$SHORT_SHA
+          env:
+            - name: ENVIRONMENT
+              value: "CLOUD"
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: conqueror-api-key
+                  key: 1

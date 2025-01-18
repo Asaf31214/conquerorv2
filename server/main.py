@@ -10,11 +10,12 @@ API_KEY = os.getenv("API_KEY")
 
 
 async def require_api_key(x_api_key: str = Header(None)):
-    if ENVIRONMENT == "CLOUD" and x_api_key != API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid API key",
-        )
+    # if ENVIRONMENT == "CLOUD" and x_api_key != API_KEY:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail="Missing or invalid API key",
+    #     )
+    pass
 
 
 app = FastAPI(dependencies=[Depends(require_api_key)])
@@ -28,6 +29,11 @@ async def health_check():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+@app.get("/env")
+async def env():
+    return {"ENV": ENVIRONMENT, "API_KEY": API_KEY, "ALL": os.environ}
 
 
 if __name__ == "__main__":
