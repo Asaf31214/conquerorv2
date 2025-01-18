@@ -1,22 +1,98 @@
+import uuid
+
 import uvicorn
-from fastapi import FastAPI
+from common.game import Game
+from common.models import *
+from fastapi import FastAPI, Response, WebSocket, WebSocketDisconnect
+from typing_extensions import Dict
+
+from WebSocketManager import ConnectionManager
+
+manager: ConnectionManager
+games: Dict[str, Game]
 
 
 async def startup():
-    print("Starting up")
+    global manager, games
+    manager = ConnectionManager()
+    games = {}
+
 
 async def shutdown():
-    print("Shutting down")
+    global manager, games
+    await manager.cleanup()
+    games.clear()
+
+
 app = FastAPI(on_startup=[startup], on_shutdown=[shutdown])
 
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+
+@app.post("/new_game")
+async def create_new_game(request: CreateNewGameRequest):
+    board_size = request.board_size
+
+    game_id = str(uuid.uuid4())
+    new_game = Game(board_size)
+    games[game_id] = new_game
+    return {"game_id": game_id}
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+@app.delete("/delete_game")
+async def delete_game(game_id: str):
+    if game_id in games:
+        del games[game_id]
+        return Response(content="Game deleted", status_code=200)
+    else:
+        return Response(content="Game with given id does not exist", status_code=400)
+
+
+@app.post("/add_player")
+async def add_player(request: AddPlayerRequest):
+    game_id = request.game_id
+    player_name = request.player_name
+    if game_id in games:
+        game = games[game_id]
+        if not game.is_full():
+            player_id = game.add_player(player_name)
+            return {"player_id": player_id}
+        else:
+            return Response(content="Game is already full", status_code=400)
+    else:
+        return Response(content="Game with given id does not exist", status_code=400)
+
+
+@app.post("/make_move")
+async def make_move(request: MakeMoveRequest):
+    game_id = request.game_id
+    if game_id in games:
+        game = games[game_id]
+        move = MakeMove(**request.model_dump(exclude={"game_id"}))
+        if result := game.make_move(move):
+            await manager.broadcast(result.to_dict())
+            return Response(content="Move successful", status_code=200)
+        else:
+            return Response(content="Invalid move", status_code=400)
+    else:
+        return Response(content="Game with given id does not exist", status_code=400)
+
+
+@app.get("/reconnect")
+async def reconnect(game_id: str):
+    if game_id in games:
+        game = games[game_id]
+        return game.to_dict()
+    else:
+        return Response(content="Game with given id does not exist", status_code=400)
+
+
+@app.websocket("/websocket")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_json()
+    except WebSocketDisconnect:
+        await manager.disconnect(websocket)
 
 
 if __name__ == "__main__":
