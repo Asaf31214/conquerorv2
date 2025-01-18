@@ -18,7 +18,6 @@ steps:
           '--region', 'eu-west1',
           '--platform', 'managed',
           '--allow-unauthenticated',
-          '--set-env-vars=VAR1=value1',
       ]
 
 images:
