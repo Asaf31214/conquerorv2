@@ -11,11 +11,15 @@ steps:
     args: ['push', 'gcr.io/$PROJECT_ID/conqueror:$SHORT_SHA']
 
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: [
-        'run', 'services', 'replace',
-        './knative-service.yaml',
-        '--region=eu-west1',
-        '--platform=managed'
+    args:
+        [
+          'run', 'deploy', 'conqueror',
+          '--image', 'gcr.io/$PROJECT_ID/conqueror:$SHORT_SHA',
+          '--region', 'eu-west1',
+          '--platform', 'managed',
+          '--allow-unauthenticated',
+          '--set-env-vars', 'ENVIRONMENT=cloud',
+          '--set-secrets', 'API_KEY=conqueror-api-key:latest',
       ]
 
 images:
