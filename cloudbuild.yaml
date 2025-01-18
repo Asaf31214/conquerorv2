@@ -14,7 +14,7 @@ steps:
     args:
         [
           'run', 'deploy', 'conquerorv2',
-          '--image', 'gcr.io/$PROJECT_ID/conqueror:$SHORT_SHA',
+          '--image', 'gcr.io/$PROJECT_ID/conquerorv2:$SHORT_SHA',
           '--region', 'eu-west1',
           '--platform', 'managed',
           '--allow-unauthenticated',
