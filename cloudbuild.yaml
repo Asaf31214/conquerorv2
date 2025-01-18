@@ -18,9 +18,15 @@ steps:
           '--region', 'eu-west1',
           '--platform', 'managed',
           '--allow-unauthenticated',
-          '--set-env-vars', 'ENVIRONMENT=cloud',
-          '--set-secrets', 'API_KEY=conqueror-api-key:latest',
+          '--set-env-vars', 'API_KEY=$$SECRET_API_KEY',
       ]
+    secretEnv:
+      - 'SECRET_API_KEY'
 
 images:
   - 'gcr.io/$PROJECT_ID/conqueror:$SHORT_SHA'
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/noted-cider-447509-b4/secrets/conqueror-api-key/versions/latest
+    env: 'SECRET_API_KEY'
