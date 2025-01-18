@@ -33,7 +33,7 @@ async def root():
 
 @app.get("/env")
 async def env():
-    return {"ENV": ENVIRONMENT, "API_KEY": API_KEY, "ALL": os.environ}
+    return {"test":"1","ENV": ENVIRONMENT, "API_KEY": API_KEY, "ALL": os.environ}
 
 
 if __name__ == "__main__":
