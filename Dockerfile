@@ -2,13 +2,10 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY server/requirements.txt /app/
+COPY . /app/
 
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY server /app/
+RUN pip install --no-cache-dir -r server/requirements.txt
 
 EXPOSE 8000
 
 CMD python scripts.py start-server
-
