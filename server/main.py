@@ -105,11 +105,25 @@ async def make_move(request: MakeMoveRequest):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.get("/full_game")
-async def full_game(game_id: str):
+@app.get("/game_state")
+async def game_state(game_id: str):
     if game_id in games:
         game = games[game_id]
         return game.to_dict()
+    else:
+        return Response(content="Game with given id does not exist", status_code=400)
+
+
+@app.get("/games")
+async def games():
+    return {"games": games.keys()}
+
+
+@app.get("/players")
+async def players(game_id: str):
+    if game_id in games:
+        game = games[game_id]
+        return {"players": [player.id for player in game.players]}
     else:
         return Response(content="Game with given id does not exist", status_code=400)
 

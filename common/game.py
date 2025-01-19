@@ -92,6 +92,7 @@ class Tile:
         self.buildings: Optional[List[BuildingType]] = None
         self.units: Optional[List[Unit]] = None
         self.treasure: Tuple[Food, Wood, Metal] = (Food(0), Wood(0), Metal(0))
+        self.building_capacity = TILE_BUILDING_CAPACITY
 
     def get_rectangle(self):
         pass
