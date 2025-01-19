@@ -85,8 +85,8 @@ async def reconnect(game_id: str):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.websocket("/websocket")
-async def websocket_endpoint(websocket: WebSocket):
+@app.websocket("/websocket/{game_id}")
+async def websocket_endpoint(websocket: WebSocket, game_id: str):
     await manager.connect(websocket)
     try:
         while True:
