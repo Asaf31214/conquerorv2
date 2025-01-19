@@ -1,3 +1,4 @@
+import uuid
 from abc import ABC, abstractmethod
 
 from typing_extensions import List, Optional, Tuple
@@ -7,7 +8,7 @@ from common.models import MakeMove
 
 
 class Resource(ABC):
-    ResourceType: Resources
+    resource_type: ResourceType
 
     @abstractmethod
     def __init__(self, amount: float):
@@ -33,21 +34,21 @@ class Resource(ABC):
 
 
 class Food(Resource):
-    ResourceType = Resources.FOOD
+    resource_type = ResourceType.FOOD
 
     def __init__(self, amount: int):
         super().__init__(amount)
 
 
 class Wood(Resource):
-    ResourceType = Resources.WOOD
+    resource_type = ResourceType.WOOD
 
     def __init__(self, amount: int):
         super().__init__(amount)
 
 
 class Metal(Resource):
-    ResourceType = Resources.METAL
+    resource_type = ResourceType.METAL
 
     def __init__(self, amount: int):
         super().__init__(amount)
@@ -56,20 +57,20 @@ class Metal(Resource):
 class Faction:
     def __init__(self):
         self._resources = {
-            Resources.FOOD: Food(0),
-            Resources.WOOD: Wood(0),
-            Resources.METAL: Metal(0),
+            ResourceType.FOOD: Food(0),
+            ResourceType.WOOD: Wood(0),
+            ResourceType.METAL: Metal(0),
         }
 
-    def get_resources(self, resource: Resources):
+    def get_resources(self, resource: ResourceType):
         return self._resources[resource]
 
     def add_resource(self, resource: Resource):
-        self._resources[resource.ResourceType] += resource
+        self._resources[resource.resource_type] += resource
 
     def use_resource(self, resource: Resource):
-        if self._resources[resource.ResourceType] >= resource:
-            self._resources[resource.ResourceType] -= resource
+        if self._resources[resource.resource_type] >= resource:
+            self._resources[resource.resource_type] -= resource
             return True
         return False
 
@@ -90,29 +91,11 @@ class Tile:
         self.hp: float = 0.0
         self.max_hp: float = 0.0
         self.faction: Optional[Faction] = None
-        self.buildings: Optional[List[Building]] = None
+        self.buildings: Optional[List[BuildingType]] = None
         self.units: Optional[List[Unit]] = None
         self.treasure: Tuple[Food, Wood, Metal] = (Food(0), Wood(0), Metal(0))
 
     def get_rectangle(self):
-        pass
-
-
-class Board:
-    def __init__(self, width: int, height: int):
-        self.width = width
-        self.height = height
-        self._tiles: List[List[Tile]] = [
-            [Tile(x, y) for y in range(height)] for x in range(width)
-        ]
-
-    def get_tile(self, x: int, y: int):
-        return self._tiles[x][y]
-
-    def place_bots(self):
-        pass
-
-    def place_player(self):
         pass
 
 
@@ -124,15 +107,23 @@ class Result:
 class Game:
     def __init__(self, board_size: int):
         self.board = Board(board_size, board_size)
+        self.players: List[Player] = []
 
-    def add_player(self, player_name) -> str:
-        pass
+    def add_player(self, player_name: str, corner: Corner) -> str:
+        faction = Faction()
+        player = Player(faction, player_name)
+        self.board.place_player(player, corner)
+        self.players.append(player)
+        return player.id
 
     def make_move(self, move: MakeMove) -> Optional[Result]:
         pass
 
-    def is_full(self) -> bool:
-        pass
+    def get_empty_corner(self) -> Optional[Corner]:
+        for corner, occupation in self.board.corner_occupations.items():
+            if not occupation:
+                return corner
+        return None
 
     def to_dict(self) -> dict:
         pass
@@ -150,8 +141,33 @@ class Move:
 
 
 class Player:
-    def __init__(self, team: Faction):
-        self.team = team
+    def __init__(self, faction: Faction, name: str):
+        self.faction = faction
+        self.id = f"player_{uuid.uuid4().hex}"
+
+
+class Board:
+    def __init__(self, width: int, height: int):
+        self.width = width
+        self.height = height
+        self._tiles: List[List[Tile]] = [
+            [Tile(x, y) for y in range(height)] for x in range(width)
+        ]
+        self.corner_occupations = {
+            Corner.TOP_LEFT: False,
+            Corner.TOP_RIGHT: False,
+            Corner.BOTTOM_LEFT: False,
+            Corner.BOTTOM_RIGHT: False,
+        }
+
+    def get_tile(self, x: int, y: int):
+        return self._tiles[x][y]
+
+    def place_bots(self):
+        pass
+
+    def place_player(self, player: Player, corner: Corner):
+        pass
 
 
 class ProductionBuilding(ABC, Building):

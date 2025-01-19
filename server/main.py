@@ -49,7 +49,7 @@ app = FastAPI(
 async def create_new_game(request: CreateNewGameRequest):
     board_size = request.board_size
 
-    game_id = str(uuid.uuid4())
+    game_id = f"game_{uuid.uuid4().hex}"
     new_game = Game(board_size)
     games[game_id] = new_game
     return {"game_id": game_id}
@@ -71,8 +71,8 @@ async def add_player(request: AddPlayerRequest):
     player_name = request.player_name
     if game_id in games:
         game = games[game_id]
-        if not game.is_full():
-            player_id = game.add_player(player_name)
+        if corner := game.get_empty_corner():
+            player_id = game.add_player(player_name, corner)
             return {"player_id": player_id}
         else:
             return Response(content="Game is already full", status_code=400)
