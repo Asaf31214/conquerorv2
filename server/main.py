@@ -1,5 +1,4 @@
 import os
-import uuid
 
 import uvicorn
 from dotenv import load_dotenv
@@ -49,10 +48,21 @@ app = FastAPI(
 async def create_new_game(request: CreateNewGameRequest):
     board_size = request.board_size
 
-    game_id = f"game_{uuid.uuid4().hex}"
     new_game = Game(board_size)
+    game_id = new_game.id
     games[game_id] = new_game
     return {"game_id": game_id}
+
+
+@app.post("/start_game")
+async def start_game(request: StartGameRequest):
+    game_id = request.game_id
+    if game_id in games:
+        game = games[game_id]
+        game.start()
+        return Response(content="Game started", status_code=200)
+    else:
+        return Response(content="Game with given id does not exist", status_code=400)
 
 
 @app.delete("/delete_game")

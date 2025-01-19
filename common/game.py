@@ -56,21 +56,19 @@ class Metal(Resource):
 
 class Faction:
     def __init__(self):
-        self._resources = {
+        self.resources = {
             ResourceType.FOOD: Food(0),
             ResourceType.WOOD: Wood(0),
             ResourceType.METAL: Metal(0),
         }
-
-    def get_resources(self, resource: ResourceType):
-        return self._resources[resource]
+        self.controlled_tiles: List[Tile] = []
 
     def add_resource(self, resource: Resource):
-        self._resources[resource.resource_type] += resource
+        self.resources[resource.resource_type] += resource
 
     def use_resource(self, resource: Resource):
-        if self._resources[resource.resource_type] >= resource:
-            self._resources[resource.resource_type] -= resource
+        if self.resources[resource.resource_type] >= resource:
+            self.resources[resource.resource_type] -= resource
             return True
         return False
 
@@ -87,9 +85,9 @@ class Tile:
     def __init__(self, x: int, y: int):
         self.x = x
         self.y = y
-        self.type: Optional[str] = None
-        self.hp: float = 0.0
+        self.type: Optional[TileType] = None
         self.max_hp: float = 0.0
+        self.hp: float = 0.0
         self.faction: Optional[Faction] = None
         self.buildings: Optional[List[BuildingType]] = None
         self.units: Optional[List[Unit]] = None
@@ -104,26 +102,56 @@ class Result:
         pass
 
 
+class Player:
+    def __init__(self, faction: Faction, name: str):
+        self.faction = faction
+        self.id = f"player_{uuid.uuid4().hex}"
+        self.name = name
+
+
 class Game:
     def __init__(self, board_size: int):
         self.board = Board(board_size, board_size)
         self.players: List[Player] = []
+        self.id = f"game_{uuid.uuid4().hex}"
+        self.turn_queue: List[Player] = []
+        self.started = False
 
     def add_player(self, player_name: str, corner: Corner) -> str:
         faction = Faction()
         player = Player(faction, player_name)
         self.board.place_player(player, corner)
         self.players.append(player)
+        self.turn_queue.append(player)
         return player.id
 
+    def get_player(self, player_id: str) -> Optional[Player]:
+        for player in self.players:
+            if player.id == player_id:
+                return player
+        return None
+
+    def start(self):
+        self.board.place_environment()
+        self.started = True
+
     def make_move(self, move: MakeMove) -> Optional[Result]:
-        pass
+        player = self.get_player(move.player_id)
+        if self.started and self.turn(player):
+            pass
+        return None
 
     def get_empty_corner(self) -> Optional[Corner]:
         for corner, occupation in self.board.corner_occupations.items():
             if not occupation:
                 return corner
         return None
+
+    def turn(self, player: Player):
+        if self.turn_queue[0] == player:
+            self.turn_queue = self.turn_queue[1:] + self.turn_queue[:1]
+            return True
+        return False
 
     def to_dict(self) -> dict:
         pass
@@ -140,17 +168,11 @@ class Move:
     pass
 
 
-class Player:
-    def __init__(self, faction: Faction, name: str):
-        self.faction = faction
-        self.id = f"player_{uuid.uuid4().hex}"
-
-
 class Board:
     def __init__(self, width: int, height: int):
         self.width = width
         self.height = height
-        self._tiles: List[List[Tile]] = [
+        self.tiles: List[List[Tile]] = [
             [Tile(x, y) for y in range(height)] for x in range(width)
         ]
         self.corner_occupations = {
@@ -159,15 +181,44 @@ class Board:
             Corner.BOTTOM_LEFT: False,
             Corner.BOTTOM_RIGHT: False,
         }
+        self.corner_coordinates = {
+            Corner.TOP_LEFT: (0, 0),
+            Corner.TOP_RIGHT: (width - 1, 0),
+            Corner.BOTTOM_LEFT: (0, height - 1),
+            Corner.BOTTOM_RIGHT: (width - 1, height - 1),
+        }
 
-    def get_tile(self, x: int, y: int):
-        return self._tiles[x][y]
+    def place_environment(self):
+        self.place_oceans()
+        self.place_obstacles()
+        self.place_bots()
+
+    def place_oceans(self):
+        pass
+
+    def place_obstacles(self):
+        pass
 
     def place_bots(self):
         pass
 
     def place_player(self, player: Player, corner: Corner):
-        pass
+        x, y = self.corner_coordinates[corner]
+        capital = self.tiles[x][y]
+
+        capital.type = TileType.LAND
+        capital.max_hp = CAPITAL_HP
+        capital.hp = capital.max_hp
+        capital.faction = player.faction
+        capital.buildings = None  # TODO
+        capital.units = None  # TODO
+        capital.Treasure = (
+            Food(CAPITAL_TREASURE),
+            Wood(CAPITAL_TREASURE),
+            Metal(CAPITAL_TREASURE),
+        )
+
+        player.faction.controlled_tiles.append(capital)
 
 
 class ProductionBuilding(ABC, Building):

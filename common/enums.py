@@ -14,6 +14,7 @@ class BuildingType(StrEnum):
     HOUSE = "House"
     BARRACK = "Barrack"
     STABLE = "Stable"
+    DOCK = "Dock"
 
 
 class UnitType(StrEnum):
