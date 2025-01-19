@@ -1,4 +1,4 @@
-from enums import *
+from common.enums import *
 
 FARM_PRODUCTION_RATE = 0
 FARM_PRODUCTION_TYPE = Resources.FOOD

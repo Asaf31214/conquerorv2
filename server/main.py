@@ -1,12 +1,12 @@
 import uuid
 
 import uvicorn
-from common.game import Game
-from common.models import *
 from fastapi import FastAPI, Response, WebSocket, WebSocketDisconnect
 from typing_extensions import Dict
 
-from WebSocketManager import ConnectionManager
+from common.game import Game
+from common.models import *
+from server.WebSocketManager import ConnectionManager
 
 manager: ConnectionManager
 games: Dict[str, Game]
@@ -95,5 +95,5 @@ async def websocket_endpoint(websocket: WebSocket):
         await manager.disconnect(websocket)
 
 
-if __name__ == "__main__":
+def main():
     uvicorn.run(app, host="0.0.0.0", port=8000)

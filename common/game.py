@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing_extensions import Optional, List, Tuple
-from models import MakeMove
 
-from constants import *
+from typing_extensions import List, Optional, Tuple
+
+from common.constants import *
+from common.models import MakeMove
 
 
 class Resource(ABC):
@@ -57,7 +58,7 @@ class Faction:
         self._resources = {
             Resources.FOOD: Food(0),
             Resources.WOOD: Wood(0),
-            Resources.METAL: Metal(0)
+            Resources.METAL: Metal(0),
         }
 
     def get_resources(self, resource: Resources):
@@ -101,7 +102,9 @@ class Board:
     def __init__(self, width: int, height: int):
         self.width = width
         self.height = height
-        self._tiles: List[List[Tile]] = [[Tile(x, y) for y in range(height)] for x in range(width)]
+        self._tiles: List[List[Tile]] = [
+            [Tile(x, y) for y in range(height)] for x in range(width)
+        ]
 
     def get_tile(self, x: int, y: int):
         return self._tiles[x][y]
@@ -164,10 +167,12 @@ class ProductionBuilding(ABC, Building):
     def produce(self) -> bool:
         faction = self.tile.faction
         consumption = ProductionBuilding.CONSUMPTION_TYPE.__init__(
-            ProductionBuilding.CONSUMPTION_RATE)
+            ProductionBuilding.CONSUMPTION_RATE
+        )
         if faction.use_resource(consumption):
             production = ProductionBuilding.PRODUCTION_TYPE.__init__(
-                ProductionBuilding.PRODUCTION_RATE)
+                ProductionBuilding.PRODUCTION_RATE
+            )
             faction.add_resource(production)
             return True
         return False

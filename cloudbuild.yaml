@@ -3,8 +3,7 @@ steps:
     args:
       [
         'build',
-        '-t', 'gcr.io/$PROJECT_ID/conqueror:$SHORT_SHA',
-        './server'
+        '-t', 'gcr.io/$PROJECT_ID/conqueror:$SHORT_SHA', '.'
       ]
 
   - name: 'gcr.io/cloud-builders/docker'
