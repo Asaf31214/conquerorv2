@@ -59,6 +59,7 @@ async def create_new_game(request: CreateNewGameRequest):
 async def delete_game(game_id: str):
     if game_id in games:
         del games[game_id]
+        await manager.cleanup_game(game_id)
         return Response(content="Game deleted", status_code=200)
     else:
         return Response(content="Game with given id does not exist", status_code=400)
@@ -86,7 +87,7 @@ async def make_move(request: MakeMoveRequest):
         game = games[game_id]
         move = MakeMove(**request.model_dump(exclude={"game_id"}))
         if result := game.make_move(move):
-            await manager.broadcast(result.to_dict())
+            await manager.broadcast(result.to_dict(), game_id)
             return Response(content="Move successful", status_code=200)
         else:
             return Response(content="Invalid move", status_code=400)
@@ -94,8 +95,8 @@ async def make_move(request: MakeMoveRequest):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.get("/reconnect")
-async def reconnect(game_id: str):
+@app.get("/full_game")
+async def full_game(game_id: str):
     if game_id in games:
         game = games[game_id]
         return game.to_dict()
@@ -105,12 +106,12 @@ async def reconnect(game_id: str):
 
 @app.websocket("/websocket/{game_id}")
 async def websocket_endpoint(websocket: WebSocket, game_id: str):
-    await manager.connect(websocket)
+    await manager.connect(websocket, game_id)
     try:
         while True:
             await websocket.receive_json()
     except WebSocketDisconnect:
-        await manager.disconnect(websocket)
+        await manager.disconnect(websocket, game_id)
 
 
 def main():
