@@ -1,7 +1,10 @@
+import os
 import uuid
 
 import uvicorn
-from fastapi import FastAPI, Response, WebSocket, WebSocketDisconnect
+from dotenv import load_dotenv
+from fastapi import (Depends, FastAPI, HTTPException, Request, Response,
+                     WebSocket, WebSocketDisconnect)
 from typing_extensions import Dict
 
 from common.game import Game
@@ -10,12 +13,17 @@ from server.WebSocketManager import ConnectionManager
 
 manager: ConnectionManager
 games: Dict[str, Game]
+API_KEY: str
+ENVIRONMENT: str
 
 
 async def startup():
-    global manager, games
+    global manager, games, API_KEY, ENVIRONMENT
     manager = ConnectionManager()
     games = {}
+    load_dotenv()
+    API_KEY = os.environ.get("API_KEY")
+    ENVIRONMENT = os.environ.get("ENVIRONMENT")
 
 
 async def shutdown():
@@ -24,7 +32,17 @@ async def shutdown():
     games.clear()
 
 
-app = FastAPI(on_startup=[startup], on_shutdown=[shutdown])
+async def require_api_key(request: Request):
+    x_api_key = request.headers.get("x-api-key")
+    if ENVIRONMENT == "cloud" and x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+
+app = FastAPI(
+    on_startup=[startup],
+    on_shutdown=[shutdown],
+    dependencies=[Depends(require_api_key)],
+)
 
 
 @app.post("/new_game")
