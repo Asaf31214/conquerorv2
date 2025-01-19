@@ -24,9 +24,10 @@ class ConnectionManager:
                 await self.disconnect(connection, game_id)
 
     async def cleanup_game(self, game_id: str):
-        for connection in self.active_connections[game_id]:
-            await self.disconnect(connection, game_id)
-        del self.active_connections[game_id]
+        if game_id in self.active_connections:
+            for connection in self.active_connections[game_id]:
+                await self.disconnect(connection, game_id)
+            del self.active_connections[game_id]
 
     async def cleanup(self):
         for game in self.active_connections:
