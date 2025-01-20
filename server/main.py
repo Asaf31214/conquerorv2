@@ -26,7 +26,6 @@ async def startup():
 
 
 async def shutdown():
-    global manager, games
     await manager.cleanup()
     games.clear()
 
@@ -115,12 +114,12 @@ async def game_state(game_id: str):
 
 
 @app.get("/games")
-async def games():
+async def get_games():
     return {"games": games.keys()}
 
 
 @app.get("/players")
-async def players(game_id: str):
+async def get_players(game_id: str):
     if game_id in games:
         game = games[game_id]
         return {"players": [player.id for player in game.players]}
