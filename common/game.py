@@ -1,7 +1,8 @@
+import random
 import uuid
 from abc import ABC, abstractmethod
 
-from typing_extensions import List, Optional, Tuple, Dict
+from typing_extensions import Dict, List, Optional, Tuple
 
 from common.constants import *
 from common.enums import *
@@ -69,7 +70,7 @@ class Faction:
             BuildingType.BARRACK: True,
             BuildingType.STABLE: False,
             BuildingType.ARCHERY: False,
-            BuildingType.DOCK: True
+            BuildingType.DOCK: True,
         }
 
     def unlock_building(self, distance_to_capital: int):
@@ -79,7 +80,6 @@ class Faction:
         elif distance_to_capital == 2:
             self.unlocked_buildings[BuildingType.MINE] = True
             self.unlocked_buildings[BuildingType.ARCHERY] = True
-        
 
     def add_resource(self, resource: Resource):
         self.resources[resource.resource_type] += resource
@@ -214,9 +214,10 @@ class Board:
             Corner.BOTTOM_LEFT: (0, height - 1),
             Corner.BOTTOM_RIGHT: (width - 1, height - 1),
         }
+
     def get_flattened_tiles(self):
         return [self.tiles[x][y] for y in range(self.height) for x in range(self.width)]
-        
+
     def get_ocean_tiles(self) -> List[Tile]:
         vertical_center = ((self.height + 1) / 2) - 1
         horizontal_center = ((self.width + 1) / 2) - 1
@@ -226,10 +227,9 @@ class Board:
                 if (
                     abs(x - horizontal_center) < OCEAN_WIDTH / 2
                     or abs(y - vertical_center) < OCEAN_WIDTH / 2
-                ): 
+                ):
                     ocean_tiles.append(self.tiles[x][y])
         return ocean_tiles
-    
 
     def get_shore_tiles(self) -> List[Tile]:
         shore_tiles = []
@@ -242,8 +242,7 @@ class Board:
             if shore:
                 shore_tiles.append(tile)
         return [tile for tile in shore_tiles if tile not in self.get_ocean_tiles()]
-        
-    
+
     @staticmethod
     def get_relative_distance(tile_1: Tile, tile_2: Tile) -> int:
         x_diff = abs(tile_1.x - tile_2.x)
@@ -257,10 +256,20 @@ class Board:
 
     def place_oceans(self):
         for ocean_tile in self.get_ocean_tiles():
-            pass # TODO
+            ocean_tile.type = TileType.OCEAN
 
     def place_obstacles(self):
-        pass
+        for tile in self.get_flattened_tiles():
+            allow_obstacle = True
+            for corner_x, corner_y in self.corner_coordinates.values():
+                distance = Board.get_relative_distance(
+                    tile, self.tiles[corner_x][corner_y]
+                )
+                if distance <= 1:
+                    allow_obstacle = False
+            if allow_obstacle:
+                if random.random() <= OBSTACLE_FREQUENCY:
+                    tile.type = TileType.OBSTACLE
 
     def place_bots(self):
         pass
