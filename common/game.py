@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from typing_extensions import List, Optional, Tuple
+from typing_extensions import List, Optional, Tuple, Dict
 
 from common.constants import *
 from common.enums import *
@@ -55,11 +55,31 @@ class Metal(Resource):
 class Faction:
     def __init__(self):
         self.resources = {
-            ResourceType.FOOD: Food(0),
-            ResourceType.WOOD: Wood(0),
-            ResourceType.METAL: Metal(0),
+            ResourceType.FOOD: Food(INITIAL_FOOD),
+            ResourceType.WOOD: Wood(INITIAL_WOOD),
+            ResourceType.METAL: Metal(INITIAL_METAL),
         }
         self.controlled_tiles: List[Tile] = []
+        self.unlocked_buildings: Dict[BuildingType, bool] = {
+            BuildingType.HOUSE: True,
+            BuildingType.MILITARY_CAMP: True,
+            BuildingType.FARM: True,
+            BuildingType.WOODCUTTER: False,
+            BuildingType.MINE: False,
+            BuildingType.BARRACK: True,
+            BuildingType.STABLE: False,
+            BuildingType.ARCHERY: False,
+            BuildingType.DOCK: True
+        }
+
+    def unlock_building(self, distance_to_capital: int):
+        if distance_to_capital == 1:
+            self.unlocked_buildings[BuildingType.WOODCUTTER] = True
+            self.unlocked_buildings[BuildingType.STABLE] = True
+        elif distance_to_capital == 2:
+            self.unlocked_buildings[BuildingType.MINE] = True
+            self.unlocked_buildings[BuildingType.ARCHERY] = True
+        
 
     def add_resource(self, resource: Resource):
         self.resources[resource.resource_type] += resource
@@ -88,6 +108,7 @@ class Tile:
         self.x = x
         self.y = y
         self.type: Optional[TileType] = None
+        self.shore = False
         self.max_hp: float = 0.0
         self.hp: float = 0.0
         self.faction: Optional[Faction] = None
@@ -193,6 +214,41 @@ class Board:
             Corner.BOTTOM_LEFT: (0, height - 1),
             Corner.BOTTOM_RIGHT: (width - 1, height - 1),
         }
+    def get_flattened_tiles(self):
+        return [self.tiles[x][y] for y in range(self.height) for x in range(self.width)]
+        
+    def get_ocean_tiles(self) -> List[Tile]:
+        vertical_center = ((self.height + 1) / 2) - 1
+        horizontal_center = ((self.width + 1) / 2) - 1
+        ocean_tiles = []
+        for x in range(self.width):
+            for y in range(self.height):
+                if (
+                    abs(x - horizontal_center) < OCEAN_WIDTH / 2
+                    or abs(y - vertical_center) < OCEAN_WIDTH / 2
+                ): 
+                    ocean_tiles.append(self.tiles[x][y])
+        return ocean_tiles
+    
+
+    def get_shore_tiles(self) -> List[Tile]:
+        shore_tiles = []
+        for tile in self.get_flattened_tiles():
+            shore = False
+            for ocean_tile in self.get_ocean_tiles():
+                if Board.get_relative_distance(tile, ocean_tile) == 1:
+                    shore = True
+                    break
+            if shore:
+                shore_tiles.append(tile)
+        return [tile for tile in shore_tiles if tile not in self.get_ocean_tiles()]
+        
+    
+    @staticmethod
+    def get_relative_distance(tile_1: Tile, tile_2: Tile) -> int:
+        x_diff = abs(tile_1.x - tile_2.x)
+        y_diff = abs(tile_1.y - tile_2.y)
+        return max(x_diff, y_diff)
 
     def place_environment(self):
         self.place_oceans()
@@ -200,7 +256,8 @@ class Board:
         self.place_bots()
 
     def place_oceans(self):
-        pass
+        for ocean_tile in self.get_ocean_tiles():
+            pass # TODO
 
     def place_obstacles(self):
         pass

@@ -8,19 +8,23 @@ class ResourceType(StrEnum):
 
 
 class BuildingType(StrEnum):
+    HOUSE = "House"
+    MILITARY_CAMP = "Military Camp"
+
     FARM = "Farm"
     WOODCUTTER = "Woodcutter"
     MINE = "Mine"
-    HOUSE = "House"
+
     BARRACK = "Barrack"
     STABLE = "Stable"
+    ARCHERY = "Archery"
+
     DOCK = "Dock"
 
 
 class UnitType(StrEnum):
     WORKER = "Worker"
     SOLDIER = "Soldier"
-    HORSE = "Horse"
 
 
 class MilitaryUnitType(StrEnum):
