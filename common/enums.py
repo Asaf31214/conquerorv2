@@ -1,10 +1,10 @@
-from enum import IntEnum, StrEnum
+from enum import StrEnum
 
 
-class ResourceType(IntEnum):
-    FOOD = 0
-    WOOD = 1
-    METAL = 2
+class ResourceType(StrEnum):
+    FOOD = "Food"
+    WOOD = "Wood"
+    METAL = "Metal"
 
 
 class BuildingType(StrEnum):

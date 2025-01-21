@@ -1,5 +1,3 @@
-from common.enums import *
-
 PRODUCTION_BUILDING_CAPACITY = 0
 
 FARM_PRODUCTION_RATE = 0

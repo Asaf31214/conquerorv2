@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing_extensions import List, Optional, Tuple
 
 from common.constants import *
+from common.enums import *
 from common.models import MakeMove
 
 
@@ -247,6 +248,14 @@ class Building(ABC):
         )
 
 
+FARM_PRODUCTION_TYPE = Food
+FARM_CONSUMPTION_TYPE = Wood
+WOODCUTTER_PRODUCTION_TYPE = Wood
+WOODCUTTER_CONSUMPTION_TYPE = Food
+MINE_PRODUCTION_TYPE = Metal
+MINE_CONSUMPTION_TYPE = Wood
+
+
 class ProductionBuilding(Building):
     resident_type = Worker
     PRODUCTION_RATE: float
@@ -271,9 +280,9 @@ class ProductionBuilding(Building):
 class Farm(ProductionBuilding):
     building_type = BuildingType.FARM
     PRODUCTION_RATE = FARM_PRODUCTION_RATE
-    PRODUCTION_TYPE = Food
+    PRODUCTION_TYPE = FARM_PRODUCTION_TYPE
     CONSUMPTION_RATE = FARM_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = Wood
+    CONSUMPTION_TYPE = FARM_CONSUMPTION_TYPE
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
@@ -282,9 +291,9 @@ class Farm(ProductionBuilding):
 class Woodcutter(ProductionBuilding):
     building_type = BuildingType.WOODCUTTER
     PRODUCTION_RATE = WOODCUTTER_PRODUCTION_RATE
-    PRODUCTION_TYPE = Wood
+    PRODUCTION_TYPE = WOODCUTTER_PRODUCTION_TYPE
     CONSUMPTION_RATE = WOODCUTTER_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = Food
+    CONSUMPTION_TYPE = WOODCUTTER_CONSUMPTION_TYPE
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
@@ -293,9 +302,9 @@ class Woodcutter(ProductionBuilding):
 class Mine(ProductionBuilding):
     building_type = BuildingType.MINE
     PRODUCTION_RATE = MINE_PRODUCTION_RATE
-    PRODUCTION_TYPE = Metal
+    PRODUCTION_TYPE = MINE_PRODUCTION_TYPE
     CONSUMPTION_RATE = MINE_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = Wood
+    CONSUMPTION_TYPE = MINE_CONSUMPTION_TYPE
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
