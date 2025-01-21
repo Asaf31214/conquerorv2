@@ -24,13 +24,10 @@ class Resource(ABC):
             return NotImplemented
         return self.__class__(self._amount - other._amount)
 
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self._amount == other._amount
-
-    def __lt__(self, other):
+    def __ge__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
-        return self._amount < other._amount
+        return self._amount >= other._amount
 
 
 class Food(Resource):
@@ -73,11 +70,15 @@ class Faction:
         return False
 
 
-class Building:
+class Unit(ABC):
     pass
 
 
-class Unit:
+class Worker(Unit):
+    pass
+
+
+class Soldier(Unit):
     pass
 
 
@@ -95,6 +96,9 @@ class Tile:
         self.building_capacity = TILE_BUILDING_CAPACITY
 
     def get_rectangle(self):
+        pass
+
+    def change_faction(self, faction: Faction):
         pass
 
 
@@ -222,55 +226,76 @@ class Board:
         player.faction.controlled_tiles.append(capital)
 
 
-class ProductionBuilding(ABC, Building):
+class Building(ABC):
+    building_type: BuildingType
+    resident_type: [Worker | Soldier]
+
+    @abstractmethod
+    def __init__(self, tile: Tile, capacity: int):
+        self.tile = tile
+        self.capacity = capacity
+        self.residents: List[Unit] = []
+
+    def add_resident(self, unit: Unit) -> bool:
+        if isinstance(unit, self.resident_type):
+            if len(self.residents) < self.capacity:
+                self.residents.append(unit)
+                return True
+            return False
+        raise TypeError(
+            f"Cannot add {unit.__class__.__name__} to {self.building_type.value}"
+        )
+
+
+class ProductionBuilding(Building):
+    resident_type = Worker
     PRODUCTION_RATE: float
-    PRODUCTION_TYPE: Resource
+    PRODUCTION_TYPE: [Food | Wood | Metal]
     CONSUMPTION_RATE: float
-    CONSUMPTION_TYPE: Resource
+    CONSUMPTION_TYPE: [Food | Wood | Metal]
 
     @abstractmethod
     def __init__(self, tile: Tile):
-        self.tile = tile
+        super().__init__(tile, PRODUCTION_BUILDING_CAPACITY)
 
     def produce(self) -> bool:
         faction = self.tile.faction
-        consumption = ProductionBuilding.CONSUMPTION_TYPE.__init__(
-            ProductionBuilding.CONSUMPTION_RATE
-        )
+        consumption = self.CONSUMPTION_TYPE(self.CONSUMPTION_RATE)
         if faction.use_resource(consumption):
-            production = ProductionBuilding.PRODUCTION_TYPE.__init__(
-                ProductionBuilding.PRODUCTION_RATE
-            )
+            production = self.PRODUCTION_TYPE(self.PRODUCTION_RATE)
             faction.add_resource(production)
             return True
         return False
 
 
 class Farm(ProductionBuilding):
+    building_type = BuildingType.FARM
     PRODUCTION_RATE = FARM_PRODUCTION_RATE
-    PRODUCTION_TYPE = FARM_PRODUCTION_TYPE
+    PRODUCTION_TYPE = Food
     CONSUMPTION_RATE = FARM_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = FARM_CONSUMPTION_TYPE
+    CONSUMPTION_TYPE = Wood
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
 
 
 class Woodcutter(ProductionBuilding):
+    building_type = BuildingType.WOODCUTTER
     PRODUCTION_RATE = WOODCUTTER_PRODUCTION_RATE
-    PRODUCTION_TYPE = WOODCUTTER_PRODUCTION_TYPE
+    PRODUCTION_TYPE = Wood
     CONSUMPTION_RATE = WOODCUTTER_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = WOODCUTTER_CONSUMPTION_TYPE
+    CONSUMPTION_TYPE = Food
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
 
 
 class Mine(ProductionBuilding):
+    building_type = BuildingType.MINE
     PRODUCTION_RATE = MINE_PRODUCTION_RATE
-    PRODUCTION_TYPE = MINE_PRODUCTION_TYPE
+    PRODUCTION_TYPE = Metal
     CONSUMPTION_RATE = MINE_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = MINE_CONSUMPTION_TYPE
+    CONSUMPTION_TYPE = Wood
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
