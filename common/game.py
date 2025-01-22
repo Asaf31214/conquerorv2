@@ -104,11 +104,14 @@ class Soldier(Unit):
     def __init__(self, faction: Faction):
         pass
 
+
 class Infantry(Soldier):
     pass
 
+
 class Cavalry(Soldier):
     pass
+
 
 class Archer(Soldier):
     pass
@@ -285,8 +288,7 @@ class Board:
     def place_bots(self):
         for tile in self.get_flattened_tiles():
             if tile.type is None:
-                pass # TODO
-
+                pass  # TODO
 
     def place_player(self, player: Player, corner: Corner):
         x, y = self.corner_coordinates[corner]
@@ -325,7 +327,7 @@ class Building(ABC):
             self.residents.append(unit)
         else:
             raise TypeError(
-            f"Cannot add {unit.__class__.__name__} to {self.building_type.value}"
+                f"Cannot add {unit.__class__.__name__} to {self.building_type.value}"
             )
 
 
@@ -401,6 +403,7 @@ class House(Building):
     def create_worker(self, faction: Faction):
         worker = Worker(faction)
         self.add_resident(worker)
+
 
 class MilitaryCamp(Building):
     building_type = BuildingType.MILITARY_CAMP
