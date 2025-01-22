@@ -113,7 +113,7 @@ class Tile:
         self.hp: float = 0.0
         self.faction: Optional[Faction] = None
         self.buildings: Optional[List[BuildingType]] = None
-        self.units: Optional[List[Unit]] = None
+        self.soldiers: Optional[List[Unit]] = None
         self.treasure: Tuple[Food, Wood, Metal] = (Food(0), Wood(0), Metal(0))
         self.building_capacity = TILE_BUILDING_CAPACITY
 
@@ -272,7 +272,10 @@ class Board:
                     tile.type = TileType.OBSTACLE
 
     def place_bots(self):
-        pass
+        for tile in self.get_flattened_tiles():
+            if tile.type is None:
+                pass # TODO
+
 
     def place_player(self, player: Player, corner: Corner):
         x, y = self.corner_coordinates[corner]
@@ -283,7 +286,7 @@ class Board:
         capital.hp = capital.max_hp
         capital.faction = player.faction
         capital.buildings = None  # TODO
-        capital.units = None  # TODO
+        capital.soldiers = None  # TODO
         capital.Treasure = (
             Food(CAPITAL_TREASURE),
             Wood(CAPITAL_TREASURE),
@@ -303,15 +306,16 @@ class Building(ABC):
         self.capacity = capacity
         self.residents: List[Unit] = []
 
-    def add_resident(self, unit: Unit) -> bool:
+    def have_space(self) -> bool:
+        return len(self.residents) < self.capacity
+
+    def add_resident(self, unit: Unit) -> None:
         if isinstance(unit, self.resident_type):
-            if len(self.residents) < self.capacity:
-                self.residents.append(unit)
-                return True
-            return False
-        raise TypeError(
+            self.residents.append(unit)
+        else:
+            raise TypeError(
             f"Cannot add {unit.__class__.__name__} to {self.building_type.value}"
-        )
+            )
 
 
 FARM_PRODUCTION_TYPE = Food
@@ -374,3 +378,22 @@ class Mine(ProductionBuilding):
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
+
+
+class House(Building):
+    building_type = BuildingType.HOUSE
+    resident_type = Worker
+
+    def __init__(self, tile: Tile):
+        super().__init__(tile, HOUSE_CAPACITY)
+
+    def create_worker(self):
+        worker = Worker()
+        self.add_resident(worker)
+
+class MilitaryCamp(Building):
+    building_type = BuildingType.MILITARY_CAMP
+    resident_type = Soldier
+
+    def __init__(self, tile: Tile):
+        super().__init__(tile, MILITARY_CAMP_CAPACITY)
