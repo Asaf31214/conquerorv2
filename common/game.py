@@ -92,29 +92,52 @@ class Faction:
 
 
 class Unit(ABC):
-    pass
+    food_cost: Food
+    wood_cost: Wood
+    metal_cost: Metal
 
 
 class Worker(Unit):
-    def __init__(self, faction: Faction):
+    food_cost = Food(WORKER_FOOD_COST)
+
+    def __init__(self):
         pass
 
 
 class Soldier(Unit):
-    def __init__(self, faction: Faction):
-        pass
+    soldier_type: MilitaryUnitType
+    strong_against: MilitaryUnitType
+    unsheltered_round_cost = Food(SOLDIER_UNSHELTERED_ROUND_COST)
+    transport_round_cost = Wood(SOLDIER_TRANSPORT_ROUND_COST)
+
+    def __init__(self):
+        self.is_sheltered = False
+        self.is_transport = False
+
+    def calculate_round_cost(self) -> Dict[ResourceType, Optional[Food | Wood]]:
+        food_cost = Soldier.unsheltered_round_cost if not self.is_sheltered else None
+        wood_cost = Soldier.transport_round_cost if self.is_transport else None
+        return {ResourceType.FOOD: food_cost, ResourceType.WOOD: wood_cost}
 
 
 class Infantry(Soldier):
-    pass
+    soldier_type = MilitaryUnitType.INFANTRY
+    strong_against = MilitaryUnitType.CAVALRY
+    food_cost = Food(INFANTRY_FOOD_COST)
 
 
 class Cavalry(Soldier):
-    pass
+    soldier_type = MilitaryUnitType.CAVALRY
+    strong_against = MilitaryUnitType.ARCHER
+    food_cost = Food(CAVALRY_FOOD_COST)
+    wood_cost = Wood(CAVALRY_WOOD_COST)
 
 
 class Archer(Soldier):
-    pass
+    soldier_type = MilitaryUnitType.ARCHER
+    strong_against = MilitaryUnitType.INFANTRY
+    wood_cost = Wood(ARCHER_WOOD_COST)
+    metal_cost = Metal(ARCHER_METAL_COST)
 
 
 class Tile:
@@ -341,10 +364,10 @@ MINE_CONSUMPTION_TYPE = Wood
 
 class ProductionBuilding(Building):
     resident_type = Worker
-    PRODUCTION_RATE: float
-    PRODUCTION_TYPE: [Food | Wood | Metal]
-    CONSUMPTION_RATE: float
-    CONSUMPTION_TYPE: [Food | Wood | Metal]
+    production_rate: float
+    production_type: [Food | Wood | Metal]
+    consumption_rate: float
+    consumption_type: [Food | Wood | Metal]
 
     @abstractmethod
     def __init__(self, tile: Tile):
@@ -352,9 +375,9 @@ class ProductionBuilding(Building):
 
     def produce(self) -> bool:
         faction = self.tile.faction
-        consumption = self.CONSUMPTION_TYPE(self.CONSUMPTION_RATE)
+        consumption = self.consumption_type(self.consumption_rate)
         if faction.use_resource(consumption):
-            production = self.PRODUCTION_TYPE(self.PRODUCTION_RATE)
+            production = self.production_type(self.production_rate)
             faction.add_resource(production)
             return True
         return False
@@ -362,10 +385,10 @@ class ProductionBuilding(Building):
 
 class Farm(ProductionBuilding):
     building_type = BuildingType.FARM
-    PRODUCTION_RATE = FARM_PRODUCTION_RATE
-    PRODUCTION_TYPE = FARM_PRODUCTION_TYPE
-    CONSUMPTION_RATE = FARM_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = FARM_CONSUMPTION_TYPE
+    production_rate = FARM_PRODUCTION_RATE
+    production_type = FARM_PRODUCTION_TYPE
+    consumption_rate = FARM_CONSUMPTION_RATE
+    consumption_type = FARM_CONSUMPTION_TYPE
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
@@ -373,10 +396,10 @@ class Farm(ProductionBuilding):
 
 class Woodcutter(ProductionBuilding):
     building_type = BuildingType.WOODCUTTER
-    PRODUCTION_RATE = WOODCUTTER_PRODUCTION_RATE
-    PRODUCTION_TYPE = WOODCUTTER_PRODUCTION_TYPE
-    CONSUMPTION_RATE = WOODCUTTER_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = WOODCUTTER_CONSUMPTION_TYPE
+    production_rate = WOODCUTTER_PRODUCTION_RATE
+    production_type = WOODCUTTER_PRODUCTION_TYPE
+    consumption_rate = WOODCUTTER_CONSUMPTION_RATE
+    consumption_type = WOODCUTTER_CONSUMPTION_TYPE
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
@@ -384,10 +407,10 @@ class Woodcutter(ProductionBuilding):
 
 class Mine(ProductionBuilding):
     building_type = BuildingType.MINE
-    PRODUCTION_RATE = MINE_PRODUCTION_RATE
-    PRODUCTION_TYPE = MINE_PRODUCTION_TYPE
-    CONSUMPTION_RATE = MINE_CONSUMPTION_RATE
-    CONSUMPTION_TYPE = MINE_CONSUMPTION_TYPE
+    production_rate = MINE_PRODUCTION_RATE
+    production_type = MINE_PRODUCTION_TYPE
+    consumption_rate = MINE_CONSUMPTION_RATE
+    consumption_type = MINE_CONSUMPTION_TYPE
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
