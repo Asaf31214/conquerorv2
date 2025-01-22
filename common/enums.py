@@ -29,8 +29,8 @@ class UnitType(StrEnum):
 
 class MilitaryUnitType(StrEnum):
     INFANTRY = "Infantry"
-    ARCHER = "Archer"
     CAVALRY = "Cavalry"
+    ARCHER = "Archer"
 
 
 class BotType(StrEnum):

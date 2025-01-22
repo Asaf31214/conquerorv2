@@ -96,10 +96,21 @@ class Unit(ABC):
 
 
 class Worker(Unit):
-    pass
+    def __init__(self, faction: Faction):
+        pass
 
 
 class Soldier(Unit):
+    def __init__(self, faction: Faction):
+        pass
+
+class Infantry(Soldier):
+    pass
+
+class Cavalry(Soldier):
+    pass
+
+class Archer(Soldier):
     pass
 
 
@@ -387,8 +398,8 @@ class House(Building):
     def __init__(self, tile: Tile):
         super().__init__(tile, HOUSE_CAPACITY)
 
-    def create_worker(self):
-        worker = Worker()
+    def create_worker(self, faction: Faction):
+        worker = Worker(faction)
         self.add_resident(worker)
 
 class MilitaryCamp(Building):
