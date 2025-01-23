@@ -84,11 +84,11 @@ class Faction:
     def add_resource(self, resource: Resource):
         self.resources[resource.resource_type] += resource
 
+    def has_resource(self, resource: Resource) -> bool:
+        return self.resources[resource.resource_type] >= resource
+
     def use_resource(self, resource: Resource):
-        if self.resources[resource.resource_type] >= resource:
-            self.resources[resource.resource_type] -= resource
-            return True
-        return False
+        self.resources[resource.resource_type] -= resource
 
 
 class Unit(ABC):
@@ -99,9 +99,13 @@ class Unit(ABC):
 
 class Worker(Unit):
     food_cost = Food(WORKER_FOOD_COST)
+    tool_cost = Metal(WORKER_TOOL_COST)
 
     def __init__(self):
-        pass
+        self.has_tool = False
+
+    def equip_tool(self):
+        self.has_tool = True
 
 
 class Soldier(Unit):
@@ -353,6 +357,11 @@ class Building(ABC):
                 f"Cannot add {unit.__class__.__name__} to {self.building_type.value}"
             )
 
+    @abstractmethod
+    def remove_resident(self, unit: Unit) -> Unit:
+        pass
+
+
 
 FARM_PRODUCTION_TYPE = Food
 FARM_CONSUMPTION_TYPE = Wood
@@ -373,14 +382,23 @@ class ProductionBuilding(Building):
     def __init__(self, tile: Tile):
         super().__init__(tile, PRODUCTION_BUILDING_CAPACITY)
 
-    def produce(self) -> bool:
+    def produce(self):
         faction = self.tile.faction
-        consumption = self.consumption_type(self.consumption_rate)
-        if faction.use_resource(consumption):
-            production = self.production_type(self.production_rate)
-            faction.add_resource(production)
-            return True
-        return False
+        for worker in self.residents:
+            assert isinstance(worker, Worker)
+            enhancer = 2 if worker.has_tool else 1
+            consumption = self.consumption_type(self.consumption_rate * enhancer)
+            if faction.has_resource(consumption):
+                faction.use_resource(consumption)
+                production = self.production_type(self.production_rate)
+                faction.add_resource(production)
+
+    def remove_resident(self, with_tool: bool):
+        for worker in self.residents:
+            if isinstance(worker, Worker) and worker.has_tool == with_tool:
+                self.residents.remove(worker)
+                return worker
+        return None
 
 
 class Farm(ProductionBuilding):
@@ -424,8 +442,17 @@ class House(Building):
         super().__init__(tile, HOUSE_CAPACITY)
 
     def create_worker(self, faction: Faction):
-        worker = Worker(faction)
-        self.add_resident(worker)
+        if faction.has_resource(Worker.food_cost):
+            faction.use_resource(Worker.food_cost)
+            worker = Worker()
+            self.add_resident(worker)
+
+    def remove_resident(self, with_tool: bool):
+        for worker in self.residents:
+            if isinstance(worker, Worker) and worker.has_tool == with_tool:
+                self.residents.remove(worker)
+                return worker
+        return None
 
 
 class MilitaryCamp(Building):
@@ -434,3 +461,55 @@ class MilitaryCamp(Building):
 
     def __init__(self, tile: Tile):
         super().__init__(tile, MILITARY_CAMP_CAPACITY)
+
+    def remove_resident(self, soldier_type: [Infantry | Cavalry | Archer]):
+        for soldier in self.residents:
+            if isinstance(soldier, soldier_type):
+                self.residents.remove(soldier)
+                return soldier
+        return None
+
+class MilitaryBuilding(Building):
+    soldier_type: [Infantry | Cavalry | Archer]
+
+    @abstractmethod
+    def __init__(self, tile: Tile):
+        super().__init__(tile, 0)
+
+    def create_soldier(self, faction: Faction):
+        if faction.has_resource(self.soldier_type.food_cost):
+            faction.use_resource(self.soldier_type.food_cost)
+            soldier = self.soldier_type()
+            self.tile.soldiers.append(soldier)
+            return True
+        return False
+
+    def add_resident(self, unit: Unit) -> None:
+        raise TypeError(
+            f"Cannot add {unit.__class__.__name__} to {self.building_type.value}"
+        )
+
+    def remove_resident(self, unit: Unit) -> Unit:
+        raise TypeError(
+            f"Cannot remove {unit.__class__.__name__} from {self.building_type.value}"
+        )
+
+class Barracks(MilitaryBuilding):
+    building_type = BuildingType.BARRACK
+    soldier_type = Infantry
+
+    def __init__(self, tile: Tile):
+        super().__init__(tile)
+
+class Stable(MilitaryBuilding):
+    building_type = BuildingType.STABLE
+    soldier_type = Infantry
+    def __init__(self, tile: Tile):
+        super().__init__(tile)
+
+class Archery(MilitaryBuilding):
+    building_type = BuildingType.ARCHERY
+    soldier_type = Archer
+
+    def __init__(self, tile: Tile):
+        super().__init__(tile)
