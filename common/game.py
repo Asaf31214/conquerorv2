@@ -153,15 +153,48 @@ class Tile:
         self.max_hp: float = 0.0
         self.hp: float = 0.0
         self.faction: Optional[Faction] = None
-        self.buildings: Optional[List[BuildingType]] = None
+        self.buildings: Optional[List["Building"]] = None
         self.soldiers: Optional[List[Unit]] = None
         self.treasure: Tuple[Food, Wood, Metal] = (Food(0), Wood(0), Metal(0))
         self.building_capacity = TILE_BUILDING_CAPACITY
+        self.tower_count = 0
+        self.wall_count = 0
 
-    def get_rectangle(self):
-        pass
+    def build_walls(self):
+        self.wall_count += 1
+
+    def build_tower(self) -> bool:
+        if not self.tower_count == MAX_TOWER_PER_TILE:
+            self.tower_count += 1
+            return True
+        return False
+
+    def get_wall_damage_modifier(self):
+        return WALL_DAMAGE_MODIFIER**self.wall_count
+
+    def get_tower_archery_power(self):
+        return self.tower_count * ARCHERY_POWER_PER_TOWER
 
     def change_faction(self, faction: Faction):
+        self.hp = self.max_hp
+        self.faction = faction
+        self.buildings = [
+            building
+            for building in self.buildings
+            if building.building_type
+            not in [
+                BuildingType.BARRACK,
+                BuildingType.STABLE,
+                BuildingType.ARCHERY,
+                BuildingType.MILITARY_CAMP,
+            ]
+        ]
+        self.soldiers = []
+        self.wall_count = 0
+        for building in self.buildings:
+            building.residents = []
+
+    def get_rectangle(self):
         pass
 
 
@@ -325,14 +358,15 @@ class Board:
         capital.max_hp = CAPITAL_HP
         capital.hp = capital.max_hp
         capital.faction = player.faction
-        capital.buildings = None  # TODO
-        capital.soldiers = None  # TODO
+        capital.buildings = [House(capital)]
+        capital.soldiers = []
         capital.Treasure = (
             Food(CAPITAL_TREASURE),
             Wood(CAPITAL_TREASURE),
             Metal(CAPITAL_TREASURE),
         )
-
+        capital.build_tower()
+        capital.build_walls()
         player.faction.controlled_tiles.append(capital)
 
 
@@ -360,7 +394,6 @@ class Building(ABC):
     @abstractmethod
     def remove_resident(self, unit: Unit) -> Unit:
         pass
-
 
 
 FARM_PRODUCTION_TYPE = Food
@@ -469,6 +502,7 @@ class MilitaryCamp(Building):
                 return soldier
         return None
 
+
 class MilitaryBuilding(Building):
     soldier_type: [Infantry | Cavalry | Archer]
 
@@ -494,6 +528,7 @@ class MilitaryBuilding(Building):
             f"Cannot remove {unit.__class__.__name__} from {self.building_type.value}"
         )
 
+
 class Barracks(MilitaryBuilding):
     building_type = BuildingType.BARRACK
     soldier_type = Infantry
@@ -501,11 +536,14 @@ class Barracks(MilitaryBuilding):
     def __init__(self, tile: Tile):
         super().__init__(tile)
 
+
 class Stable(MilitaryBuilding):
     building_type = BuildingType.STABLE
     soldier_type = Infantry
+
     def __init__(self, tile: Tile):
         super().__init__(tile)
+
 
 class Archery(MilitaryBuilding):
     building_type = BuildingType.ARCHERY

@@ -50,3 +50,8 @@ class Corner(StrEnum):
     TOP_RIGHT = "Top Right"
     BOTTOM_LEFT = "Bottom Left"
     BOTTOM_RIGHT = "Bottom Right"
+
+
+class DefensiveBuildings(StrEnum):
+    WALLS = "Walls"
+    TOWER = "Tower"
