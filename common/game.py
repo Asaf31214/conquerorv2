@@ -487,9 +487,9 @@ MINE_CONSUMPTION_TYPE = Wood
 class ProductionBuilding(ResidentialBuilding):
     resident_type = Worker
     production_rate: float
-    production_type: Type[Food] | Type[Wood] | Type[Metal]
+    production_type: Type[Food | Wood | Metal]
     consumption_rate: float
-    consumption_type: Type[Food] | Type[Wood] | Type[Metal]
+    consumption_type: Type[Food | Wood | Metal]
 
     @abstractmethod
     def __init__(self, tile: Tile):
