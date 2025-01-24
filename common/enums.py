@@ -17,7 +17,7 @@ class BuildingType(StrEnum):
 
     BARRACK = "Barrack"
     STABLE = "Stable"
-    ARCHERY = "Archery"
+    FACTORY = "Factory"
 
     DOCK = "Dock"
 
@@ -27,10 +27,20 @@ class UnitType(StrEnum):
     SOLDIER = "Soldier"
 
 
-class MilitaryUnitType(StrEnum):
-    INFANTRY = "Infantry"
-    CAVALRY = "Cavalry"
+class InfantryUnitType(StrEnum):
+    SWORDSMAN = "Swordsman"
+    SPEARMAN = "Spearman"
     ARCHER = "Archer"
+
+
+class CavalryUnitType(StrEnum):
+    LIGHT_CAVALRY = "Light Cavalry"
+    HEAVY_CAVALRY = "Heavy Cavalry"
+    HORSE_ARCHER = "Horse Archer"
+
+
+class SiegeUnitType(StrEnum):
+    CANNON = "Cannon"
 
 
 class BotType(StrEnum):

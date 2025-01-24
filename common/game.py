@@ -17,49 +17,50 @@ class Resource(ABC):
         self._amount = amount
 
     def __add__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
+        assert isinstance(other, self.__class__)
         return self.__class__(self._amount + other._amount)
 
     def __sub__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
+        assert isinstance(other, self.__class__)
         return self.__class__(self._amount - other._amount)
 
     def __ge__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
+        assert isinstance(other, self.__class__)
         return self._amount >= other._amount
+
+    @staticmethod
+    def objectify(costs: Tuple[float, float, float]):
+        return {
+            ResourceType.FOOD: Food(costs[0]),
+            ResourceType.WOOD: Wood(costs[1]),
+            ResourceType.METAL: Metal(costs[2]),
+        }
 
 
 class Food(Resource):
     resource_type = ResourceType.FOOD
 
-    def __init__(self, amount: int):
+    def __init__(self, amount: float):
         super().__init__(amount)
 
 
 class Wood(Resource):
     resource_type = ResourceType.WOOD
 
-    def __init__(self, amount: int):
+    def __init__(self, amount: float):
         super().__init__(amount)
 
 
 class Metal(Resource):
     resource_type = ResourceType.METAL
 
-    def __init__(self, amount: int):
+    def __init__(self, amount: float):
         super().__init__(amount)
 
 
 class Faction:
     def __init__(self):
-        self.resources = {
-            ResourceType.FOOD: Food(INITIAL_FOOD),
-            ResourceType.WOOD: Wood(INITIAL_WOOD),
-            ResourceType.METAL: Metal(INITIAL_METAL),
-        }
+        self.resources = Resource.objectify(INITIAL_RESOURCES)
         self.controlled_tiles: List[Tile] = []
         self.unlocked_buildings: Dict[BuildingType, bool] = {
             BuildingType.HOUSE: True,
@@ -69,7 +70,7 @@ class Faction:
             BuildingType.MINE: False,
             BuildingType.BARRACK: True,
             BuildingType.STABLE: False,
-            BuildingType.ARCHERY: False,
+            BuildingType.FACTORY: False,
             BuildingType.DOCK: True,
         }
 
@@ -79,7 +80,7 @@ class Faction:
             self.unlocked_buildings[BuildingType.STABLE] = True
         elif distance_to_capital == 2:
             self.unlocked_buildings[BuildingType.MINE] = True
-            self.unlocked_buildings[BuildingType.ARCHERY] = True
+            self.unlocked_buildings[BuildingType.FACTORY] = True
 
     def add_resource(self, resource: Resource):
         self.resources[resource.resource_type] += resource
@@ -87,19 +88,33 @@ class Faction:
     def has_resource(self, resource: Resource) -> bool:
         return self.resources[resource.resource_type] >= resource
 
+    def has_resources(self, resources: Dict[ResourceType, Resource]) -> bool:
+        for resource_type, resource_amount in resources.items():
+            if self.resources[resource_type] < resource_amount:
+                return False
+        return True
+
     def use_resource(self, resource: Resource):
         self.resources[resource.resource_type] -= resource
 
+    def use_resources(self, resources: Dict[ResourceType, Resource]):
+        for resource_type, resource_amount in resources.items():
+            self.resources[resource_type] -= resource_amount
+
 
 class Unit(ABC):
-    food_cost: Food
-    wood_cost: Wood
-    metal_cost: Metal
+    unit_type: UnitType
+    cost: Dict[ResourceType, Resource]
+
+    @abstractmethod
+    def get_properties(self) -> Dict:
+        return {}
 
 
 class Worker(Unit):
-    food_cost = Food(WORKER_FOOD_COST)
-    tool_cost = Metal(WORKER_TOOL_COST)
+    unit_type = UnitType.WORKER
+    cost = Resource.objectify(WORKER_COST)
+    tool_cost = Resource.objectify(WORKER_TOOL_COST)
 
     def __init__(self):
         self.has_tool = False
@@ -107,13 +122,19 @@ class Worker(Unit):
     def equip_tool(self):
         self.has_tool = True
 
+    def get_properties(self) -> Dict[str, bool]:
+        return {
+            "has_tool": self.has_tool
+        }
+
 
 class Soldier(Unit):
-    soldier_type: MilitaryUnitType
-    strong_against: MilitaryUnitType
+    unit_type = UnitType.SOLDIER
+    soldier_type: [InfantryUnitType | CavalryUnitType | SiegeUnitType]
     unsheltered_round_cost = Food(SOLDIER_UNSHELTERED_ROUND_COST)
     transport_round_cost = Wood(SOLDIER_TRANSPORT_ROUND_COST)
 
+    @abstractmethod
     def __init__(self):
         self.is_sheltered = False
         self.is_transport = False
@@ -123,25 +144,65 @@ class Soldier(Unit):
         wood_cost = Soldier.transport_round_cost if self.is_transport else None
         return {ResourceType.FOOD: food_cost, ResourceType.WOOD: wood_cost}
 
+    def get_properties(self) -> Dict[str, [InfantryUnitType | CavalryUnitType | SiegeUnitType]]:
+        return {
+            "soldier_type": self.soldier_type
+        }
 
-class Infantry(Soldier):
-    soldier_type = MilitaryUnitType.INFANTRY
-    strong_against = MilitaryUnitType.CAVALRY
-    food_cost = Food(INFANTRY_FOOD_COST)
+class Swordsman(Soldier):
+    soldier_type = InfantryUnitType.SWORDSMAN
+    cost = Resource.objectify(SWORDSMAN_COST)
+
+    def __init__(self):
+        super().__init__()
 
 
-class Cavalry(Soldier):
-    soldier_type = MilitaryUnitType.CAVALRY
-    strong_against = MilitaryUnitType.ARCHER
-    food_cost = Food(CAVALRY_FOOD_COST)
-    wood_cost = Wood(CAVALRY_WOOD_COST)
+class Spearman(Soldier):
+    soldier_type = InfantryUnitType.SPEARMAN
+    cost = Resource.objectify(SPEARMAN_COST)
+
+    def __init__(self):
+        super().__init__()
 
 
 class Archer(Soldier):
-    soldier_type = MilitaryUnitType.ARCHER
-    strong_against = MilitaryUnitType.INFANTRY
-    wood_cost = Wood(ARCHER_WOOD_COST)
-    metal_cost = Metal(ARCHER_METAL_COST)
+    soldier_type = InfantryUnitType.ARCHER
+    cost = Resource.objectify(ARCHER_COST)
+
+    def __init__(self):
+        super().__init__()
+
+
+class LightCavalry(Soldier):
+    soldier_type = CavalryUnitType.LIGHT_CAVALRY
+    cost = Resource.objectify(LIGHT_CAVALRY_COST)
+
+    def __init__(self):
+        super().__init__()
+
+
+class HeavyCavalry(Soldier):
+    soldier_type = CavalryUnitType.HEAVY_CAVALRY
+    cost = Resource.objectify(HEAVY_CAVALRY_COST)
+
+    def __init__(self):
+        super().__init__()
+
+
+class HorseArcher(Soldier):
+    soldier_type = CavalryUnitType.HORSE_ARCHER
+    cost = Resource.objectify(HORSE_ARCHER_COST)
+
+    def __init__(self):
+        super().__init__()
+
+
+class Cannon(Soldier):
+    soldier_type = SiegeUnitType.CANNON
+    cost = Resource.objectify(CANNON_COST)
+
+    def __init__(self):
+        super().__init__()
 
 
 class Tile:
@@ -170,7 +231,7 @@ class Tile:
         return False
 
     def get_wall_damage_modifier(self):
-        return WALL_DAMAGE_MODIFIER**self.wall_count
+        return WALL_DAMAGE_MODIFIER ** self.wall_count
 
     def get_tower_archery_power(self):
         return self.tower_count * ARCHERY_POWER_PER_TOWER
@@ -182,12 +243,12 @@ class Tile:
             building
             for building in self.buildings
             if building.building_type
-            not in [
-                BuildingType.BARRACK,
-                BuildingType.STABLE,
-                BuildingType.ARCHERY,
-                BuildingType.MILITARY_CAMP,
-            ]
+               not in [
+                   BuildingType.BARRACK,
+                   BuildingType.STABLE,
+                   BuildingType.FACTORY,
+                   BuildingType.MILITARY_CAMP
+               ]
         ]
         self.soldiers = []
         self.wall_count = 0
@@ -255,7 +316,7 @@ class Game:
         return False
 
     def to_dict(self) -> dict:
-        pass
+        pass # todo
 
     def __del__(self):
         pass
@@ -360,11 +421,7 @@ class Board:
         capital.faction = player.faction
         capital.buildings = [House(capital)]
         capital.soldiers = []
-        capital.Treasure = (
-            Food(CAPITAL_TREASURE),
-            Wood(CAPITAL_TREASURE),
-            Metal(CAPITAL_TREASURE),
-        )
+        capital.Treasure = Resource.objectify(CAPITAL_TREASURE)
         capital.build_tower()
         capital.build_walls()
         player.faction.controlled_tiles.append(capital)
@@ -372,28 +429,34 @@ class Board:
 
 class Building(ABC):
     building_type: BuildingType
+
+    @abstractmethod
+    def __init__(self, tile: Tile):
+        self.tile = tile
+
+
+class ResidentialBuilding(Building):
     resident_type: [Worker | Soldier]
 
     @abstractmethod
     def __init__(self, tile: Tile, capacity: int):
-        self.tile = tile
         self.capacity = capacity
         self.residents: List[Unit] = []
+        super().__init__(tile)
 
     def have_space(self) -> bool:
         return len(self.residents) < self.capacity
 
     def add_resident(self, unit: Unit) -> None:
-        if isinstance(unit, self.resident_type):
-            self.residents.append(unit)
-        else:
-            raise TypeError(
-                f"Cannot add {unit.__class__.__name__} to {self.building_type.value}"
-            )
+        assert isinstance(unit, self.resident_type)
+        self.residents.append(unit)
 
-    @abstractmethod
-    def remove_resident(self, unit: Unit) -> Unit:
-        pass
+    def remove_resident(self, unit_data: Dict) -> Optional[Unit]:
+        for unit in self.residents:
+            if unit.get_properties() == unit_data:
+                self.residents.remove(unit)
+                return unit
+        return None
 
 
 FARM_PRODUCTION_TYPE = Food
@@ -404,7 +467,7 @@ MINE_PRODUCTION_TYPE = Metal
 MINE_CONSUMPTION_TYPE = Wood
 
 
-class ProductionBuilding(Building):
+class ProductionBuilding(ResidentialBuilding):
     resident_type = Worker
     production_rate: float
     production_type: [Food | Wood | Metal]
@@ -425,13 +488,6 @@ class ProductionBuilding(Building):
                 faction.use_resource(consumption)
                 production = self.production_type(self.production_rate)
                 faction.add_resource(production)
-
-    def remove_resident(self, with_tool: bool):
-        for worker in self.residents:
-            if isinstance(worker, Worker) and worker.has_tool == with_tool:
-                self.residents.remove(worker)
-                return worker
-        return None
 
 
 class Farm(ProductionBuilding):
@@ -467,7 +523,7 @@ class Mine(ProductionBuilding):
         super().__init__(tile)
 
 
-class House(Building):
+class House(ResidentialBuilding):
     building_type = BuildingType.HOUSE
     resident_type = Worker
 
@@ -475,40 +531,26 @@ class House(Building):
         super().__init__(tile, HOUSE_CAPACITY)
 
     def create_worker(self, faction: Faction):
-        if faction.has_resource(Worker.food_cost):
-            faction.use_resource(Worker.food_cost)
+        if faction.has_resources(Worker.cost):
+            faction.use_resources(Worker.cost)
             worker = Worker()
             self.add_resident(worker)
 
-    def remove_resident(self, with_tool: bool):
-        for worker in self.residents:
-            if isinstance(worker, Worker) and worker.has_tool == with_tool:
-                self.residents.remove(worker)
-                return worker
-        return None
 
-
-class MilitaryCamp(Building):
+class MilitaryCamp(ResidentialBuilding):
     building_type = BuildingType.MILITARY_CAMP
     resident_type = Soldier
 
     def __init__(self, tile: Tile):
         super().__init__(tile, MILITARY_CAMP_CAPACITY)
 
-    def remove_resident(self, soldier_type: [Infantry | Cavalry | Archer]):
-        for soldier in self.residents:
-            if isinstance(soldier, soldier_type):
-                self.residents.remove(soldier)
-                return soldier
-        return None
-
 
 class MilitaryBuilding(Building):
-    soldier_type: [Infantry | Cavalry | Archer]
+    soldier_type: [Swordsman | Spearman | Archer | LightCavalry | HeavyCavalry | HorseArcher]
 
     @abstractmethod
     def __init__(self, tile: Tile):
-        super().__init__(tile, 0)
+        super().__init__(tile)
 
     def create_soldier(self, faction: Faction):
         if faction.has_resource(self.soldier_type.food_cost):
@@ -518,20 +560,9 @@ class MilitaryBuilding(Building):
             return True
         return False
 
-    def add_resident(self, unit: Unit) -> None:
-        raise TypeError(
-            f"Cannot add {unit.__class__.__name__} to {self.building_type.value}"
-        )
-
-    def remove_resident(self, unit: Unit) -> Unit:
-        raise TypeError(
-            f"Cannot remove {unit.__class__.__name__} from {self.building_type.value}"
-        )
-
 
 class Barracks(MilitaryBuilding):
     building_type = BuildingType.BARRACK
-    soldier_type = Infantry
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
@@ -539,15 +570,13 @@ class Barracks(MilitaryBuilding):
 
 class Stable(MilitaryBuilding):
     building_type = BuildingType.STABLE
-    soldier_type = Infantry
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
 
 
-class Archery(MilitaryBuilding):
-    building_type = BuildingType.ARCHERY
-    soldier_type = Archer
+class Factory(MilitaryBuilding):
+    building_type = BuildingType.FACTORY
 
     def __init__(self, tile: Tile):
         super().__init__(tile)
