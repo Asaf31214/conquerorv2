@@ -332,12 +332,6 @@ class Game:
             return True
         return False
 
-    def to_dict(self) -> dict:
-        pass  # todo
-
-    def __del__(self):
-        pass
-
 
 class Round:
     pass
@@ -493,7 +487,7 @@ class ProductionBuilding(ResidentialBuilding):
 
     @abstractmethod
     def __init__(self, tile: Tile):
-        super().__init__(tile, PRODUCTION_BUILDING_CAPACITY)
+        super().__init__(tile, PRODUCTION_BUILDING_WORKER_CAPACITY)
 
     def produce(self):
         faction = self.tile.faction

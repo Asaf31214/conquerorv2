@@ -1,9 +1,11 @@
 from pydantic import BaseModel
 from typing_extensions import Optional, Tuple
+from common.constants import DEFAULT_BOARD_SIZE, DEFAULT_OCEAN_WIDTH
 
 
 class CreateNewGameRequest(BaseModel):
-    board_size: int
+    board_size: int = DEFAULT_BOARD_SIZE
+    ocean_width: int = DEFAULT_OCEAN_WIDTH
 
 
 class AddPlayerRequest(BaseModel):
