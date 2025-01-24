@@ -22,8 +22,8 @@ async def startup():
     manager = ConnectionManager()
     games = {}
     load_dotenv()
-    API_KEY = os.environ.get("API_KEY")
-    ENVIRONMENT = os.environ.get("ENVIRONMENT")
+    API_KEY = os.environ.get("API_KEY", "")
+    ENVIRONMENT = os.environ.get("ENVIRONMENT", "")
 
 
 async def shutdown():
@@ -47,8 +47,9 @@ app = FastAPI(
 @app.post("/new_game")
 async def create_new_game(request: CreateNewGameRequest):
     board_size = request.board_size
+    ocean_width = request.ocean_width
 
-    new_game = Game(board_size)
+    new_game = Game(board_size, ocean_width)
     game_id = new_game.id
     games[game_id] = new_game
     return {"game_id": game_id}

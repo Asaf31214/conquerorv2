@@ -288,8 +288,8 @@ class Player:
 
 
 class Game:
-    def __init__(self, board_size: int):
-        self.board = Board(board_size, board_size)
+    def __init__(self, board_size: int, ocean_width: int):
+        self.board = Board(board_size, board_size, ocean_width)
         self.players: List[Player] = []
         self.id = f"game_{uuid.uuid4().hex}"
         self.turn_queue: List[Player] = []
@@ -342,9 +342,10 @@ class Move:
 
 
 class Board:
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int, ocean_width: int):
         self.width = width
         self.height = height
+        self.ocean_width = ocean_width
         self.tiles: List[List[Tile]] = [
             [Tile(x, y) for y in range(height)] for x in range(width)
         ]
@@ -371,8 +372,8 @@ class Board:
         for x in range(self.width):
             for y in range(self.height):
                 if (
-                    abs(x - horizontal_center) < OCEAN_WIDTH / 2
-                    or abs(y - vertical_center) < OCEAN_WIDTH / 2
+                    abs(x - horizontal_center) < self.ocean_width / 2
+                    or abs(y - vertical_center) < self.ocean_width / 2
                 ):
                     ocean_tiles.append(self.tiles[x][y])
         return ocean_tiles
