@@ -397,9 +397,17 @@ class Board:
         return max(x_diff, y_diff)
 
     def place_environment(self):
+        self.place_corner_treasures()
         self.place_oceans()
         self.place_obstacles()
         self.place_bots()
+
+    def place_corner_treasures(self):
+        for x, y in self.corner_coordinates.values():
+            tile = self.tiles[x][y]
+            if tile.type is None:
+                tile.type = TileType.LAND
+                #todo
 
     def place_oceans(self):
         for ocean_tile in self.get_ocean_tiles():
@@ -421,7 +429,37 @@ class Board:
     def place_bots(self):
         for tile in self.get_flattened_tiles():
             if tile.type is None:
-                pass  # TODO
+                level = self.get_bot_level(tile)
+                tile.type = TileType.LAND
+                tile.max_hp = BOT_HP
+                tile.hp = tile.max_hp
+                army_size = BOT_BASE_ARMY_SIZE * level
+                army_composition = self.get_bot_army_composition(level)
+                if army_composition:
+                    for i in range(army_size):
+                        soldier_class = army_composition[i % len(army_composition)]
+                        tile.soldiers.append(soldier_class())
+                tile.treasure = Resource.objectify((BOT_BASE_TREASURE[0] * level,
+                                                    BOT_BASE_TREASURE[1] * level,
+                                                    BOT_BASE_TREASURE[2] * level))
+                tile.wall_count = max(0, level-2)
+
+
+    def get_bot_level(self, tile: Tile) -> int:
+        x, y = tile.x, tile.y
+        x_level = min(x, self.width - 1 - x)
+        y_level = min(y, self.height - 1 - y)
+        return max(x_level, y_level)
+    
+    @staticmethod
+    def get_bot_army_composition(level: int) -> List[Type[Unit]]:
+        level_0: List[Type[Unit]] = []
+        level_1 = level_0 + [Swordsman, LightCavalry]
+        level_2 = level_1 + [Spearman, HeavyCavalry]
+        level_3 = level_2 + [Archer, HorseArcher]
+
+        levels = [level_0, level_1, level_2, level_3]
+        return levels[level]
 
     def place_player(self, player: Player, corner: Corner):
         x, y = self.corner_coordinates[corner]
