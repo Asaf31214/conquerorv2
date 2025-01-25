@@ -3,8 +3,15 @@ import pickle
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import (Depends, FastAPI, HTTPException, Request, Response,
-                     WebSocket, WebSocketDisconnect)
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    Request,
+    Response,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from typing_extensions import Dict
 
 from common.game import Game

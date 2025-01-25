@@ -409,24 +409,34 @@ class War:
         },
     }
 
-    def __init__(self, army_1: List[Soldier], army_2: List[Soldier]):
+    def __init__(
+        self,
+        army_1: List[Soldier],
+        army_2: List[Soldier],
+        towers: int = 0,
+        walls: int = 0,
+    ):
+        """Army 1 is the attacker, Army 2 is the defender. Towers and walls belong to Army 2."""
         self.army_1 = army_1
         self.army_2 = army_2
+        self.towers = towers
+        self.walls = walls
 
     @staticmethod
-    def group_soldier_types(army: List[Soldier]):
+    def group_soldier_types(army: List[Soldier], towers: int):
         groups: Dict[InfantryUnitType | CavalryUnitType | SiegeUnitType, int] = (
             defaultdict(int)
         )
         for soldier in army:
             groups[soldier.soldier_type] += 1
+        groups[InfantryUnitType.ARCHER] += towers
         return groups
 
     @staticmethod
     def get_army_composition(
-        army: List[Soldier],
+        army: List[Soldier], towers: int
     ) -> Dict[InfantryUnitType | CavalryUnitType | SiegeUnitType, float]:
-        grouped_army = War.group_soldier_types(army)
+        grouped_army = War.group_soldier_types(army, towers)
         composition = {
             soldier_type: soldier_count / len(army)
             for soldier_type, soldier_count in grouped_army.items()
@@ -441,8 +451,8 @@ class War:
         )
 
     def get_power_factors(self) -> Tuple[float, float]:
-        army_1_comp = War.get_army_composition(self.army_1)
-        army_2_comp = War.get_army_composition(self.army_2)
+        army_1_comp = War.get_army_composition(self.army_1, 0)
+        army_2_comp = War.get_army_composition(self.army_2, self.towers)
         army_1_power_factor = 0.0
         army_2_power_factor = 0.0
         for soldier_type_1, soldier_ratio_1 in army_1_comp.items():
