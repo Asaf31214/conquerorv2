@@ -340,6 +340,8 @@ class Round:
 class Move:
     pass
 
+class War:
+    pass
 
 class Board:
     def __init__(self, width: int, height: int, ocean_width: int):
