@@ -439,18 +439,21 @@ class Board:
                     for i in range(army_size):
                         soldier_class = army_composition[i % len(army_composition)]
                         tile.soldiers.append(soldier_class())
-                tile.treasure = Resource.objectify((BOT_BASE_TREASURE[0] * level,
-                                                    BOT_BASE_TREASURE[1] * level,
-                                                    BOT_BASE_TREASURE[2] * level))
-                tile.wall_count = max(0, level-2)
-
+                tile.treasure = Resource.objectify(
+                    (
+                        BOT_BASE_TREASURE[0] * level,
+                        BOT_BASE_TREASURE[1] * level,
+                        BOT_BASE_TREASURE[2] * level,
+                    )
+                )
+                tile.wall_count = max(0, level - 2)
 
     def get_bot_level(self, tile: Tile) -> int:
         x, y = tile.x, tile.y
         x_level = min(x, self.width - 1 - x)
         y_level = min(y, self.height - 1 - y)
         return max(x_level, y_level)
-    
+
     @staticmethod
     def get_bot_army_composition(level: int) -> List[Type[Unit]]:
         level_0: List[Type[Unit]] = []

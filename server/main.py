@@ -1,6 +1,6 @@
 import os
-
 import pickle
+
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import (Depends, FastAPI, HTTPException, Request, Response,
@@ -110,7 +110,9 @@ async def make_move(request: MakeMoveRequest):
 async def game_state(game_id: str):
     if game_id in games:
         game = games[game_id]
-        return Response(content=pickle.dumps(game), media_type="application/octet-stream")
+        return Response(
+            content=pickle.dumps(game), media_type="application/octet-stream"
+        )
     else:
         return Response(content="Game with given id does not exist", status_code=400)
 

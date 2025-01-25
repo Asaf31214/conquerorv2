@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing_extensions import Optional, Tuple
+
 from common.constants import DEFAULT_BOARD_SIZE, DEFAULT_OCEAN_WIDTH
 
 
