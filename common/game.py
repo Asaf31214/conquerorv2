@@ -407,7 +407,7 @@ class Board:
             tile = self.tiles[x][y]
             if tile.type is None:
                 tile.type = TileType.LAND
-                #todo
+                tile.treasure = Resource.objectify(EMPTY_CORNER_TREASURE)
 
     def place_oceans(self):
         for ocean_tile in self.get_ocean_tiles():
