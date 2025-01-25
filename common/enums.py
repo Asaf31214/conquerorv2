@@ -65,3 +65,12 @@ class Corner(StrEnum):
 class DefensiveBuildings(StrEnum):
     WALLS = "Walls"
     TOWER = "Tower"
+
+
+class MoveTypes(StrEnum):
+    ARMY = "Army"
+    BUILD = "Build"
+    CREATE = "Create"
+    MODIFY = "Modify"
+    TRANSFER = "Transfer"
+
