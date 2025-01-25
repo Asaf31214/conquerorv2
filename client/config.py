@@ -1,0 +1,1 @@
+SERVER_BASE_URL = "https://conquerorv2-520018356558.europe-west1.run.app/"
