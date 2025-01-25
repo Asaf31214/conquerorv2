@@ -1,6 +1,7 @@
 import random
 import uuid
 from abc import ABC, abstractmethod
+from collections import defaultdict
 
 from typing_extensions import Dict, List, Optional, Tuple, Type
 
@@ -340,8 +341,141 @@ class Round:
 class Move:
     pass
 
+
 class War:
-    pass
+    counter_matrix = {
+        InfantryUnitType.SWORDSMAN: {
+            InfantryUnitType.SWORDSMAN: NEUTRAL,
+            InfantryUnitType.SPEARMAN: NEUTRAL,
+            InfantryUnitType.ARCHER: NEUTRAL,
+            CavalryUnitType.LIGHT_CAVALRY: NEUTRAL,
+            CavalryUnitType.HEAVY_CAVALRY: NEUTRAL,
+            CavalryUnitType.HORSE_ARCHER: NEUTRAL,
+            SiegeUnitType.CANNON: NEUTRAL,
+        },
+        InfantryUnitType.SPEARMAN: {
+            InfantryUnitType.SWORDSMAN: NEUTRAL,
+            InfantryUnitType.SPEARMAN: NEUTRAL,
+            InfantryUnitType.ARCHER: NEUTRAL,
+            CavalryUnitType.LIGHT_CAVALRY: NEUTRAL,
+            CavalryUnitType.HEAVY_CAVALRY: NEUTRAL,
+            CavalryUnitType.HORSE_ARCHER: NEUTRAL,
+            SiegeUnitType.CANNON: NEUTRAL,
+        },
+        InfantryUnitType.ARCHER: {
+            InfantryUnitType.SWORDSMAN: NEUTRAL,
+            InfantryUnitType.SPEARMAN: NEUTRAL,
+            InfantryUnitType.ARCHER: NEUTRAL,
+            CavalryUnitType.LIGHT_CAVALRY: NEUTRAL,
+            CavalryUnitType.HEAVY_CAVALRY: NEUTRAL,
+            CavalryUnitType.HORSE_ARCHER: NEUTRAL,
+            SiegeUnitType.CANNON: NEUTRAL,
+        },
+        CavalryUnitType.LIGHT_CAVALRY: {
+            InfantryUnitType.SWORDSMAN: NEUTRAL,
+            InfantryUnitType.SPEARMAN: NEUTRAL,
+            InfantryUnitType.ARCHER: NEUTRAL,
+            CavalryUnitType.LIGHT_CAVALRY: NEUTRAL,
+            CavalryUnitType.HEAVY_CAVALRY: NEUTRAL,
+            CavalryUnitType.HORSE_ARCHER: NEUTRAL,
+            SiegeUnitType.CANNON: NEUTRAL,
+        },
+        CavalryUnitType.HEAVY_CAVALRY: {
+            InfantryUnitType.SWORDSMAN: NEUTRAL,
+            InfantryUnitType.SPEARMAN: NEUTRAL,
+            InfantryUnitType.ARCHER: NEUTRAL,
+            CavalryUnitType.LIGHT_CAVALRY: NEUTRAL,
+            CavalryUnitType.HEAVY_CAVALRY: NEUTRAL,
+            CavalryUnitType.HORSE_ARCHER: NEUTRAL,
+            SiegeUnitType.CANNON: NEUTRAL,
+        },
+        CavalryUnitType.HORSE_ARCHER: {
+            InfantryUnitType.SWORDSMAN: NEUTRAL,
+            InfantryUnitType.SPEARMAN: NEUTRAL,
+            InfantryUnitType.ARCHER: NEUTRAL,
+            CavalryUnitType.LIGHT_CAVALRY: NEUTRAL,
+            CavalryUnitType.HEAVY_CAVALRY: NEUTRAL,
+            CavalryUnitType.HORSE_ARCHER: NEUTRAL,
+            SiegeUnitType.CANNON: NEUTRAL,
+        },
+        SiegeUnitType.CANNON: {
+            InfantryUnitType.SWORDSMAN: NEUTRAL,
+            InfantryUnitType.SPEARMAN: NEUTRAL,
+            InfantryUnitType.ARCHER: NEUTRAL,
+            CavalryUnitType.LIGHT_CAVALRY: NEUTRAL,
+            CavalryUnitType.HEAVY_CAVALRY: NEUTRAL,
+            CavalryUnitType.HORSE_ARCHER: NEUTRAL,
+            SiegeUnitType.CANNON: NEUTRAL,
+        },
+    }
+
+    def __init__(self, army_1: List[Soldier], army_2: List[Soldier]):
+        self.army_1 = army_1
+        self.army_2 = army_2
+
+    @staticmethod
+    def group_soldier_types(army: List[Soldier]):
+        groups: Dict[InfantryUnitType | CavalryUnitType | SiegeUnitType, int] = (
+            defaultdict(int)
+        )
+        for soldier in army:
+            groups[soldier.soldier_type] += 1
+        return groups
+
+    @staticmethod
+    def get_army_composition(
+        army: List[Soldier],
+    ) -> Dict[InfantryUnitType | CavalryUnitType | SiegeUnitType, float]:
+        grouped_army = War.group_soldier_types(army)
+        composition = {
+            soldier_type: soldier_count / len(army)
+            for soldier_type, soldier_count in grouped_army.items()
+        }
+        return composition
+
+    @staticmethod
+    def get_luck_factors() -> Tuple[float, float]:
+        return (
+            random.uniform(1 - LUCK_FACTOR, 1 + LUCK_FACTOR),
+            random.uniform(1 - LUCK_FACTOR, 1 + LUCK_FACTOR),
+        )
+
+    def get_power_factors(self) -> Tuple[float, float]:
+        army_1_comp = War.get_army_composition(self.army_1)
+        army_2_comp = War.get_army_composition(self.army_2)
+        army_1_power_factor = 0.0
+        army_2_power_factor = 0.0
+        for soldier_type_1, soldier_ratio_1 in army_1_comp.items():
+            for soldier_type_2, soldier_ratio_2 in army_2_comp.items():
+                army_1_power_factor += (
+                    soldier_ratio_1
+                    * soldier_ratio_2
+                    * War.counter_matrix[soldier_type_1][soldier_type_2]
+                )
+                army_2_power_factor += (
+                    soldier_ratio_1
+                    * soldier_ratio_2
+                    * War.counter_matrix[soldier_type_2][soldier_type_1]
+                )
+        return army_1_power_factor, army_2_power_factor
+
+    def get_total_powers(self):
+        army_1_power_factor, army_2_power_factor = self.get_power_factors()
+        army_1_total_power = army_1_power_factor * len(self.army_1)
+        army_2_total_power = army_2_power_factor * len(self.army_2)
+        return army_1_total_power, army_2_total_power
+
+    def result(self) -> Tuple[float, float]:
+        army_1_total_power, army_2_total_power = self.get_total_powers()
+        army_1_luck, army_2_luck = War.get_luck_factors()
+        army_1_net_power = army_1_total_power * army_1_luck
+        army_2_net_power = army_2_total_power * army_2_luck
+        total_powers = army_1_net_power + army_2_net_power
+        return army_1_net_power / total_powers, army_2_net_power / total_powers
+
+    def consequences(self):
+        pass  # todo
+
 
 class Board:
     def __init__(self, width: int, height: int, ocean_width: int):
