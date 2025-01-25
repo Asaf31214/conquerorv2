@@ -235,10 +235,10 @@ class Tile:
         }
         self.building_capacity = TILE_BUILDING_CAPACITY
         self.tower_count = 0
-        self.wall_count = 0
+        self.wall_count = 0.0
 
     def build_walls(self):
-        self.wall_count += 1
+        self.wall_count += 1.0
 
     def build_tower(self) -> bool:
         if not self.tower_count == MAX_TOWER_PER_TILE:
@@ -246,8 +246,9 @@ class Tile:
             return True
         return False
 
-    def get_wall_damage_modifier(self):
-        return WALL_DAMAGE_MODIFIER**self.wall_count
+    @staticmethod
+    def get_wall_damage_modifier(wall_count):
+        return WALL_DAMAGE_MODIFIER**wall_count
 
     def get_tower_archery_power(self):
         return self.tower_count * ARCHERY_POWER_PER_TOWER
@@ -429,7 +430,7 @@ class War:
         )
         for soldier in army:
             groups[soldier.soldier_type] += 1
-        groups[InfantryUnitType.ARCHER] += towers
+        groups[InfantryUnitType.ARCHER] += towers * ARCHERY_POWER_PER_TOWER
         return groups
 
     @staticmethod
@@ -475,17 +476,35 @@ class War:
         army_2_total_power = army_2_power_factor * len(self.army_2)
         return army_1_total_power, army_2_total_power
 
-    def result(self) -> Tuple[float, float]:
+    def final_damage_rates(self) -> Tuple[float, float]:
         army_1_total_power, army_2_total_power = self.get_total_powers()
         army_1_luck, army_2_luck = War.get_luck_factors()
         army_1_net_power = army_1_total_power * army_1_luck
         army_2_net_power = army_2_total_power * army_2_luck
         total_powers = army_1_net_power + army_2_net_power
-        return army_1_net_power / total_powers, army_2_net_power / total_powers
+        army_1_damage, army_2_damage = (army_2_net_power / total_powers,
+                                        army_1_net_power / total_powers)
+        if army_1_damage >= 0.75:
+            army_1_damage = 1.0
 
-    def consequences(self):
-        pass  # todo
+        if army_2_damage >= 0.75:
+            army_2_damage = 1.0
 
+        return army_1_damage, army_2_damage
+
+    @staticmethod
+    def calculate_wall_damage(defender_damage: float, cannons: int):
+        defender_damage = 0 if defender_damage <= 0.25 else defender_damage
+        return defender_damage * cannons * CANNON_DAMAGE_TO_WALL
+
+    def result(self):
+        damage_1, damage_2 = self.final_damage_rates()
+        attacker_cannons = sum([1 for soldier in self.army_1
+                                if soldier.soldier_type == SiegeUnitType.CANNON])
+        wall_damage = War.calculate_wall_damage(damage_2, attacker_cannons)
+        remaining_walls = self.walls - wall_damage
+        defender_tile_damage = damage_1 * Tile.get_wall_damage_modifier(remaining_walls)
+        return damage_1, damage_2, wall_damage, defender_tile_damage
 
 class Board:
     def __init__(self, width: int, height: int, ocean_width: int):
