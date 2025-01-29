@@ -97,6 +97,11 @@ async def add_player(request: AddPlayerRequest):
     else:
         return Response(content="Game with given id does not exist", status_code=400)
 
+@app.post("/demo_move")
+async def demo_move(request: DemoMove):
+    broadcast_value = request.model_dump()
+    await manager.broadcast(broadcast_value, request.game_id)
+    return Response(content="Move successful", status_code=200)
 
 @app.post("/make_move")
 async def make_move(request: MakeMoveRequest):
