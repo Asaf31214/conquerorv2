@@ -138,8 +138,8 @@ async def get_players(game_id: str):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.websocket("/websocket/{game_id}")
-async def websocket_endpoint(websocket: WebSocket, game_id: str):
+@app.websocket("/ws/{game_id}")
+async def ws_game(websocket: WebSocket, game_id: str):
     await manager.connect(websocket, game_id)
     try:
         while True:
