@@ -482,8 +482,10 @@ class War:
         army_1_net_power = army_1_total_power * army_1_luck
         army_2_net_power = army_2_total_power * army_2_luck
         total_powers = army_1_net_power + army_2_net_power
-        army_1_damage, army_2_damage = (army_2_net_power / total_powers,
-                                        army_1_net_power / total_powers)
+        army_1_damage, army_2_damage = (
+            army_2_net_power / total_powers,
+            army_1_net_power / total_powers,
+        )
         if army_1_damage >= 0.75:
             army_1_damage = 1.0
 
@@ -499,12 +501,18 @@ class War:
 
     def result(self):
         damage_1, damage_2 = self.final_damage_rates()
-        attacker_cannons = sum([1 for soldier in self.army_1
-                                if soldier.soldier_type == SiegeUnitType.CANNON])
+        attacker_cannons = sum(
+            [
+                1
+                for soldier in self.army_1
+                if soldier.soldier_type == SiegeUnitType.CANNON
+            ]
+        )
         wall_damage = War.calculate_wall_damage(damage_2, attacker_cannons)
         remaining_walls = self.walls - wall_damage
         defender_tile_damage = damage_1 * Tile.get_wall_damage_modifier(remaining_walls)
         return damage_1, damage_2, wall_damage, defender_tile_damage
+
 
 class Board:
     def __init__(self, width: int, height: int, ocean_width: int):

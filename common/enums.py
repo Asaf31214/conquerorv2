@@ -73,4 +73,3 @@ class MoveTypes(StrEnum):
     CREATE = "Create"
     MODIFY = "Modify"
     TRANSFER = "Transfer"
-

@@ -28,8 +28,3 @@ class MakeMoveRequest(MakeMove):
 
 class StartGameRequest(BaseModel):
     game_id: str
-
-class DemoMove(BaseModel):
-    game_id: str
-    x: int
-    y: int

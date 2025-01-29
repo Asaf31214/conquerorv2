@@ -3,15 +3,8 @@ import pickle
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import (
-    Depends,
-    FastAPI,
-    HTTPException,
-    Request,
-    Response,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import (Depends, FastAPI, HTTPException, Request, Response,
+                     WebSocket, WebSocketDisconnect)
 from typing_extensions import Dict
 
 from common.game import Game
@@ -38,10 +31,14 @@ async def shutdown():
     games.clear()
 
 
-async def require_api_key(request: Request):
-    x_api_key = request.headers.get("x-api-key")
+async def require_api_key(connection):
+    x_api_key = connection.headers.get("x-api-key")
     if ENVIRONMENT == "cloud" and x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+        if isinstance(connection, Request):
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        elif isinstance(connection, WebSocket):
+            await connection.close(code=1008)
+            raise WebSocketDisconnect
 
 
 app = FastAPI(
@@ -59,6 +56,7 @@ async def create_new_game(request: CreateNewGameRequest):
     new_game = Game(board_size, ocean_width)
     game_id = new_game.id
     games[game_id] = new_game
+    manager.active_connections[game_id] = []
     return {"game_id": game_id}
 
 
@@ -97,11 +95,6 @@ async def add_player(request: AddPlayerRequest):
     else:
         return Response(content="Game with given id does not exist", status_code=400)
 
-@app.post("/demo_move")
-async def demo_move(request: DemoMove):
-    broadcast_value = request.model_dump()
-    await manager.broadcast(broadcast_value, request.game_id)
-    return Response(content="Move successful", status_code=200)
 
 @app.post("/make_move")
 async def make_move(request: MakeMoveRequest):
