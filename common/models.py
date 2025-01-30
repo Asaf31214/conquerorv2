@@ -25,6 +25,10 @@ class MakeMove(BaseModel):
 class MakeMoveRequest(MakeMove):
     game_id: str
 
+class DemoRequest(BaseModel):
+    game_id: str
+    x: int
+    y: int
 
 class StartGameRequest(BaseModel):
     game_id: str

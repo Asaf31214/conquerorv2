@@ -111,6 +111,17 @@ async def make_move(request: MakeMoveRequest):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
+@app.post("/demo_move")
+async def demo_move(request: DemoRequest):
+    game_id = request.game_id
+    x = request.x
+    y = request.y
+    if game_id in games:
+        await manager.broadcast({"clicked_x": x, "clicked_y": y}, game_id)
+        return Response(content="Move successful", status_code=200)
+    return Response(content="Such game does not exist", status_code=400)
+
+
 @app.get("/game_state")
 async def game_state(game_id: str):
     if game_id in games:
