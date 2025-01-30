@@ -1,7 +1,9 @@
 from enum import StrEnum
 
-API_URL = "https://conquerorv2-520018356558.europe-west1.run.app"
-WS_URL = "ws://conquerorv2-520018356558.europe-west1.run.app/ws"
+# API_URL = "https://conquerorv2-520018356558.europe-west1.run.app"
+# WS_URL = "ws://conquerorv2-520018356558.europe-west1.run.app/ws"
+API_URL = "http://localhost:8000"
+WS_URL = "ws://localhost:8000"
 
 MAIN_MENU_SCREEN_SIZE = (600, 400)
 TILE_SIZE = 60

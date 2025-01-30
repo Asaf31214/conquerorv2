@@ -31,24 +31,19 @@ async def shutdown():
     games.clear()
 
 
-async def require_api_key(connection):
-    x_api_key = connection.headers.get("x-api-key")
+async def require_api_key(request: Request):
+    x_api_key = request.headers.get("x-api-key")
     if ENVIRONMENT == "cloud" and x_api_key != API_KEY:
-        if isinstance(connection, Request):
-            raise HTTPException(status_code=401, detail="Invalid API key")
-        elif isinstance(connection, WebSocket):
-            await connection.close(code=1008)
-            raise WebSocketDisconnect
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 app = FastAPI(
     on_startup=[startup],
     on_shutdown=[shutdown],
-    dependencies=[Depends(require_api_key)],
 )
 
 
-@app.post("/new_game")
+@app.post("/new_game", dependencies=[Depends(require_api_key)])
 async def create_new_game(request: CreateNewGameRequest):
     board_size = request.board_size
     ocean_width = request.ocean_width
@@ -60,7 +55,7 @@ async def create_new_game(request: CreateNewGameRequest):
     return {"game_id": game_id}
 
 
-@app.post("/start_game")
+@app.post("/start_game", dependencies=[Depends(require_api_key)])
 async def start_game(request: StartGameRequest):
     game_id = request.game_id
     if game_id in games:
@@ -71,7 +66,7 @@ async def start_game(request: StartGameRequest):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.delete("/delete_game")
+@app.delete("/delete_game", dependencies=[Depends(require_api_key)])
 async def delete_game(game_id: str):
     if game_id in games:
         del games[game_id]
@@ -81,7 +76,7 @@ async def delete_game(game_id: str):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.post("/add_player")
+@app.post("/add_player", dependencies=[Depends(require_api_key)])
 async def add_player(request: AddPlayerRequest):
     game_id = request.game_id
     player_name = request.player_name
@@ -96,7 +91,7 @@ async def add_player(request: AddPlayerRequest):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.post("/make_move")
+@app.post("/make_move", dependencies=[Depends(require_api_key)])
 async def make_move(request: MakeMoveRequest):
     game_id = request.game_id
     if game_id in games:
@@ -111,7 +106,7 @@ async def make_move(request: MakeMoveRequest):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.post("/demo_move")
+@app.post("/demo_move", dependencies=[Depends(require_api_key)])
 async def demo_move(request: DemoRequest):
     game_id = request.game_id
     x = request.x
@@ -122,7 +117,7 @@ async def demo_move(request: DemoRequest):
     return Response(content="Such game does not exist", status_code=400)
 
 
-@app.get("/game_state")
+@app.get("/game_state", dependencies=[Depends(require_api_key)])
 async def game_state(game_id: str):
     if game_id in games:
         game = games[game_id]
@@ -133,12 +128,12 @@ async def game_state(game_id: str):
         return Response(content="Game with given id does not exist", status_code=400)
 
 
-@app.get("/games")
+@app.get("/games", dependencies=[Depends(require_api_key)])
 async def get_games():
     return {"games": games.keys()}
 
 
-@app.get("/players")
+@app.get("/players", dependencies=[Depends(require_api_key)])
 async def get_players(game_id: str):
     if game_id in games:
         game = games[game_id]
@@ -149,6 +144,7 @@ async def get_players(game_id: str):
 
 @app.websocket("/ws/{game_id}")
 async def ws_game(websocket: WebSocket, game_id: str):
+    print("connecting ws")
     await manager.connect(websocket, game_id)
     try:
         while True:

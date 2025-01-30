@@ -36,24 +36,16 @@ async def send_move_request(move_data):
         response = await client.post(
             f"{API_URL}/demo_move",
             headers={"x-api-key": API_KEY},
-            # json=move_data,
             json={"x": move_data["x"], "y": move_data["y"], "game_id": game_id},
             timeout=10,
         )
         print(f"Move sent: {move_data}, Response: {response.status_code}")
-        return response.json() if response.status_code == 200 else None
 
 
 async def listen_for_updates(game_id_: str):
-    print("listen for updates is called")
     """Listen for updates from the WebSocket server."""
     socket_url = f"{WS_URL}/{Endpoints.WS.value}/{game_id_}"
-    print("socket_url: ", socket_url)
-    async with websockets.connect(
-        socket_url, extra_headers={"x-api-key": API_KEY}
-    ) as ws:
-        # async with websockets.connect(socket_url) as ws:
-        print(f"Connected to WebSocket for game {game_id_}")
+    async with websockets.connect(socket_url) as ws:
         async for message in ws:
             print(f"Game update received: {message}")
 
@@ -61,7 +53,7 @@ async def listen_for_updates(game_id_: str):
 async def create_game():
     url = f"{API_URL}/new_game"
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers={"x-api-key": API_KEY})
+        response = await client.post(url, json={})
         return response.json()["game_id"]
 
 
@@ -71,21 +63,16 @@ async def game_loop():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif (
-                event.type == pygame.MOUSEBUTTONDOWN
-            ):  # Example: Make move on mouse click
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 move_data = {
                     "game_id": game_id,
                     "x": event.pos[0],
                     "y": event.pos[1],
-                }  # Example move data
-                print(f"Sending move: {move_data}")
-                asyncio.create_task(
-                    send_move_request(move_data)
-                )  # Send move without blocking
+                }
+                asyncio.create_task(send_move_request(move_data))
         screen.fill((255, 255, 255))
         pygame.display.flip()
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
 
 
 async def main_():
@@ -94,7 +81,6 @@ async def main_():
     global game_id
     game_id = await create_game()
     websocket_task = asyncio.create_task(listen_for_updates(game_id))
-    await asyncio.sleep(1)
     await game_loop()
     websocket_task.cancel()
 
