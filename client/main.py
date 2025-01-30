@@ -14,7 +14,6 @@ screen: pygame.Surface
 game_id: str
 
 
-
 def set_api_key():
     load_dotenv()
     global API_KEY
@@ -31,15 +30,14 @@ def initialize_game():
 
 async def send_move_request(move_data):
     """Send a move to the server via an HTTP request asynchronously."""
+    print(f"Move sent: {move_data}")
     async with httpx.AsyncClient() as client:
-        print(f"Sending move")
         response = await client.post(
             f"{API_URL}/demo_move",
             headers={"x-api-key": API_KEY},
             json={"x": move_data["x"], "y": move_data["y"], "game_id": game_id},
             timeout=10,
         )
-        print(f"Move sent: {move_data}, Response: {response.status_code}")
 
 
 async def listen_for_updates(game_id_: str):
@@ -47,13 +45,13 @@ async def listen_for_updates(game_id_: str):
     socket_url = f"{WS_URL}/{Endpoints.WS.value}/{game_id_}"
     async with websockets.connect(socket_url) as ws:
         async for message in ws:
-            print(f"Game update received: {message}")
+            print(f"Game update received: {message!r}")
 
 
 async def create_game():
     url = f"{API_URL}/new_game"
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json={})
+        response = await client.post(url, json={}, headers={"x-api-key": API_KEY})
         return response.json()["game_id"]
 
 
@@ -72,24 +70,18 @@ async def game_loop():
                 asyncio.create_task(send_move_request(move_data))
         screen.fill((255, 255, 255))
         pygame.display.flip()
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0)
 
 
-async def main_():
+async def game():
     set_api_key()
     initialize_game()
     global game_id
     game_id = await create_game()
-    websocket_task = asyncio.create_task(listen_for_updates(game_id))
+    asyncio.create_task(listen_for_updates(game_id))
     await game_loop()
-    websocket_task.cancel()
 
 
 def main():
     loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(main_())
-    except KeyboardInterrupt:
-        pass
-    finally:
-        loop.close()
+    loop.run_until_complete(game())

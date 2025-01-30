@@ -130,7 +130,7 @@ async def game_state(game_id: str):
 
 @app.get("/games", dependencies=[Depends(require_api_key)])
 async def get_games():
-    return {"games": games.keys()}
+    return {"games": list(games.keys())}
 
 
 @app.get("/players", dependencies=[Depends(require_api_key)])
@@ -144,7 +144,6 @@ async def get_players(game_id: str):
 
 @app.websocket("/ws/{game_id}")
 async def ws_game(websocket: WebSocket, game_id: str):
-    print("connecting ws")
     await manager.connect(websocket, game_id)
     try:
         while True:

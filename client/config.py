@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 # API_URL = "https://conquerorv2-520018356558.europe-west1.run.app"
-# WS_URL = "ws://conquerorv2-520018356558.europe-west1.run.app/ws"
+# WS_URL = "wss://conquerorv2-520018356558.europe-west1.run.app"
 API_URL = "http://localhost:8000"
 WS_URL = "ws://localhost:8000"
 
