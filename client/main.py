@@ -1,88 +1,65 @@
 import asyncio
-import os
+from collections import defaultdict
 
-import httpx
 import pygame
-import websockets
+import pygame_gui
 from dotenv import load_dotenv
+from pygame_gui.core.ui_element import UIElement
+from typing_extensions import Callable, Dict
 
-from client.config import *
+from client.colors import *
+from client.config import API_URL, TILE_SIZE, WINDOW_SIZE, WS_URL
+from client.connection_manager import RequestManager, SocketManager
 
-API_KEY: str
-running: bool
+request_manager: RequestManager
+socket_manager: SocketManager
+ui_manager: pygame_gui.UIManager
 screen: pygame.Surface
-game_id: str
+element_actions: Dict[UIElement, Callable] = defaultdict(lambda: lambda: None)
 
 
-def set_api_key():
-    load_dotenv()
-    global API_KEY
-    API_KEY = os.environ.get("API_KEY", "")
-
-
-def initialize_game():
-    global running, screen
-    running = True
-    pygame.init()
-    screen = pygame.display.set_mode(MAIN_MENU_SCREEN_SIZE)
-    pygame.display.set_caption(WINDOW_TITLE)
-    
-
-
-async def send_move_request(move_data):
-    """Send a move to the server via an HTTP request asynchronously."""
-    print(f"Move sent: {move_data}")
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{API_URL}/demo_move",
-            headers={"x-api-key": API_KEY},
-            json={"x": move_data["x"], "y": move_data["y"], "game_id": game_id},
-            timeout=10,
-        )
-
-
-async def listen_for_updates(game_id_: str):
-    """Listen for updates from the WebSocket server."""
-    socket_url = f"{WS_URL}/{Endpoints.WS.value}/{game_id_}"
-    async with websockets.connect(socket_url) as ws:
-        async for message in ws:
-            print(f"Game update received: {message!r}")
-
-
-async def create_game():
-    url = f"{API_URL}/new_game"
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, json={}, headers={"x-api-key": API_KEY})
-        return response.json()["game_id"]
+def dummy_action():
+    print("Dummy action triggered")
 
 
 async def game_loop():
-    global running
+    clock = pygame.time.Clock()
+    running = True
     while running:
+        time_delta = clock.tick(60) / 1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                move_data = {
-                    "game_id": game_id,
-                    "x": event.pos[0],
-                    "y": event.pos[1],
-                }
-                asyncio.create_task(send_move_request(move_data))
-        screen.fill((255, 255, 255))
+            else:
+                ui_manager.process_events(event)
+                if event.type == pygame.USEREVENT:
+                    element_actions[event.ui_element]()
+
+        screen.fill(WHITE)
+        ui_manager.update(time_delta)
+        ui_manager.draw_ui(screen)
         pygame.display.flip()
         await asyncio.sleep(0)
+    pygame.quit()
 
 
-async def game():
-    set_api_key()
-    initialize_game()
-    global game_id
-    game_id = await create_game()
-    asyncio.create_task(listen_for_updates(game_id))
+async def game_client():
+    global request_manager, socket_manager, ui_manager, element_actions, screen
+    load_dotenv()
+    request_manager = RequestManager(API_URL)
+    socket_manager = SocketManager(WS_URL)
+    pygame.init()
+    ui_manager = pygame_gui.UIManager(WINDOW_SIZE)
+    screen = pygame.display.set_mode(WINDOW_SIZE)
+    hello_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((50, 50), (200, 50)),
+        text="Say Hello",
+        manager=ui_manager,
+    )
+    element_actions[hello_button] = dummy_action
     await game_loop()
 
 
 def main():
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(game())
+    loop.run_until_complete(game_client())

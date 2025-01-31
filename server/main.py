@@ -9,7 +9,7 @@ from typing_extensions import Dict
 
 from common.game import Game
 from common.models import *
-from server.WebSocketManager import ConnectionManager
+from server.web_socket_manager import ConnectionManager
 
 manager: ConnectionManager
 games: Dict[str, Game]
