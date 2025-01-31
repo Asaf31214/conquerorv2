@@ -26,6 +26,7 @@ def initialize_game():
     pygame.init()
     screen = pygame.display.set_mode(MAIN_MENU_SCREEN_SIZE)
     pygame.display.set_caption(WINDOW_TITLE)
+    
 
 
 async def send_move_request(move_data):

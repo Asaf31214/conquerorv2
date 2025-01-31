@@ -32,5 +32,5 @@ class ConnectionManager:
             del self.active_connections[game_id]
 
     async def cleanup(self):
-        for game_id in self.active_connections:
+        for game_id in list(self.active_connections.keys()):
             await self.cleanup_game(game_id)
