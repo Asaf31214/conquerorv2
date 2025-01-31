@@ -8,7 +8,7 @@ import pygame
 import pygame_gui
 from dotenv import load_dotenv
 from pygame_gui.core.ui_element import UIElement
-from typing_extensions import Callable, Dict
+from typing_extensions import Callable, Dict, List, Optional
 
 from client.colors import *
 from client.config import *
@@ -25,17 +25,47 @@ class WindowTile:
         self.rect = pygame.Rect(x+TILE_OFFSET, y+TILE_OFFSET, TILE_INNER_SIZE, TILE_INNER_SIZE)
         self.color = GRAY
         self.selected = False
+        self.attacked = False
 
     def draw(self):
         pygame.draw.rect(screen, self.color, self.rect)
         if self.selected:
+            pygame.draw.rect(screen, GREEN, self.rect, 5)
+        elif self.attacked:
             pygame.draw.rect(screen, RED, self.rect, 5)
 
 class WindowBoard:
-    def __init__(self, board_size: int):
+    def __init__(self):
         self.tiles = [[WindowTile(x, y)
                        for x in range(0, BOARD_SIZE, TILE_OUTER_SIZE)]
                       for y in range(0, BOARD_SIZE, TILE_OUTER_SIZE)]
+        self.selected_tiles: List[Optional[WindowTile]] = [None, None]
+        self.waiting_attack = False
+
+    def update_selected_tile(self, pos):
+        if tile:=self.pos_to_tile(pos):
+            if not self.waiting_attack:
+                if self.selected_tiles[0] == tile:
+                    if self.selected_tiles[0]:
+                        self.selected_tiles[0].selected = False
+                        self.selected_tiles[0] = None
+                else:
+                    if self.selected_tiles[0]:
+                        self.selected_tiles[0].selected = False
+                    self.selected_tiles[0] = tile
+                    self.selected_tiles[0].selected = True
+            else:
+                self.selected_tiles[1] = tile
+                tile.attacked = True
+
+
+    def pos_to_tile(self, pos):
+        for row in self.tiles:
+            for tile in row:
+                if tile.rect.collidepoint(pos):
+                    return tile
+        return None
+
 
     def draw(self):
         for row in self.tiles:
@@ -50,8 +80,7 @@ def dummy_action():
 async def game_loop():
     clock = pygame.time.Clock()
     running = True
-    window_board = WindowBoard(BOARD_SIZE)
-    selected_tile = None
+    window_board = WindowBoard()
     while running:
         time_delta = clock.tick(60) / 1000.0
         for event in pygame.event.get():
@@ -64,13 +93,7 @@ async def game_loop():
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
-                    for row in window_board.tiles:
-                        for tile in row:
-                            if tile.rect.collidepoint(pos):
-                                if selected_tile:
-                                    selected_tile.selected = False
-                                selected_tile = tile
-                                tile.selected = True
+                    window_board.update_selected_tile(pos)
 
         screen.fill(WHITE)
         window_board.draw()
@@ -80,6 +103,14 @@ async def game_loop():
         await asyncio.sleep(0)
     pygame.quit()
 
+def place_components():
+    hello_button = pygame_gui.elements.UIDropDownMenu(
+        relative_rect=pygame.Rect((0, BOARD_SIZE), (200, 50)),
+        manager=ui_manager,
+        starting_option="Hello",
+        options_list=["Hello", "World"],
+    )
+    element_actions[hello_button] = dummy_action
 
 async def game_client():
     global request_manager, socket_manager, ui_manager, element_actions, screen
@@ -89,13 +120,7 @@ async def game_client():
     pygame.init()
     ui_manager = pygame_gui.UIManager(WINDOW_SIZE)
     screen = pygame.display.set_mode(WINDOW_SIZE)
-    hello_button = pygame_gui.elements.UIDropDownMenu(
-        relative_rect=pygame.Rect((50, 50), (200, 50)),
-        manager=ui_manager,
-        starting_option="Hello",
-        options_list=["Hello", "World"],
-    )
-    element_actions[hello_button] = dummy_action
+    place_components()
     await game_loop()
 
 
