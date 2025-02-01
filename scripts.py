@@ -1,18 +1,19 @@
 import typer
 
-from client import client
-from server import server
-
 app = typer.Typer()
 
 
 @app.command()
 def start_server():
+    from server import server
+
     server()
 
 
 @app.command()
 def start_client():
+    from client import client
+
     client()
 
 

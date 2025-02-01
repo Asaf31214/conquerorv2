@@ -273,9 +273,6 @@ class Tile:
             if isinstance(building, ResidentialBuilding):
                 building.residents = []
 
-    def get_rectangle(self):
-        pass
-
 
 class Result:
     def to_dict(self) -> dict:
