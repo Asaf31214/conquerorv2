@@ -22,17 +22,19 @@ screen: pygame.Surface
 ui_stage: UIStages
 elements: List[UIElement] = []
 element_actions: Dict[UIElement, Callable] = defaultdict(lambda: lambda **kwargs: None)
-element_visibilities: Dict[UIStages,Dict[UIElement, bool]] = {
+element_visibilities: Dict[UIStages, Dict[UIElement, bool]] = {
     UIStages.LOG_IN: defaultdict(bool),
     UIStages.MAIN_MENU: defaultdict(bool),
     UIStages.GAME_LOBBY: defaultdict(bool),
-    UIStages.GAME_PLAYING: defaultdict(bool)
+    UIStages.GAME_PLAYING: defaultdict(bool),
 }
+
 
 def set_stage(UIStage):
     global ui_stage
     ui_stage = UIStage
     update_visibilities()
+
 
 def update_visibilities():
     current_stage_elements = element_visibilities[ui_stage]
@@ -42,7 +44,9 @@ def update_visibilities():
 
 class WindowTile:
     def __init__(self, x, y):
-        self.rect = pygame.Rect(x+TILE_OFFSET, y+TILE_OFFSET, TILE_INNER_SIZE, TILE_INNER_SIZE)
+        self.rect = pygame.Rect(
+            x + TILE_OFFSET, y + TILE_OFFSET, TILE_INNER_SIZE, TILE_INNER_SIZE
+        )
         self.color = GRAY
         self.selected = False
         self.attacked = False
@@ -54,16 +58,18 @@ class WindowTile:
         elif self.attacked:
             pygame.draw.rect(screen, RED, self.rect, 5)
 
+
 class WindowBoard:
     def __init__(self):
-        self.tiles = [[WindowTile(x, y)
-                       for x in range(0, BOARD_SIZE, TILE_OUTER_SIZE)]
-                      for y in range(0, BOARD_SIZE, TILE_OUTER_SIZE)]
+        self.tiles = [
+            [WindowTile(x, y) for x in range(0, BOARD_SIZE, TILE_OUTER_SIZE)]
+            for y in range(0, BOARD_SIZE, TILE_OUTER_SIZE)
+        ]
         self.selected_tiles: List[Optional[WindowTile]] = [None, None]
         self.waiting_attack = False
 
     def update_selected_tile(self, pos):
-        if tile:=self.pos_to_tile(pos):
+        if tile := self.pos_to_tile(pos):
             if not self.waiting_attack:
                 if self.selected_tiles[0] == tile:
                     if self.selected_tiles[0]:
@@ -78,7 +84,6 @@ class WindowBoard:
                 self.selected_tiles[1] = tile
                 tile.attacked = True
 
-
     def pos_to_tile(self, pos):
         for row in self.tiles:
             for tile in row:
@@ -86,12 +91,10 @@ class WindowBoard:
                     return tile
         return None
 
-
     def draw(self):
         for row in self.tiles:
             for tile in row:
                 tile.draw()
-
 
 
 async def game_loop():
@@ -110,7 +113,11 @@ async def game_loop():
 
             else:
                 ui_manager.process_events(event)
-                if event.type == pygame.USEREVENT and last_event.type == pygame.MOUSEBUTTONDOWN:
+                if (
+                    event.type == pygame.USEREVENT
+                    and last_event
+                    and last_event.type == pygame.MOUSEBUTTONDOWN
+                ):
                     await element_actions[event.ui_element](window_board=window_board)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -128,9 +135,12 @@ async def game_loop():
 
     pygame.quit()
 
+
 async def log_in(**kwargs):
     global player_name
-    input_field = [_ for _ in elements if _.most_specific_combined_id == "#player_name_input"][0]
+    input_field = [
+        _ for _ in elements if _.most_specific_combined_id == "#player_name_input"
+    ][0]
     assert isinstance(input_field, pygame_gui.elements.UITextEntryLine)
     player_name = input_field.get_text()
     set_stage(UIStages.MAIN_MENU)
@@ -138,22 +148,22 @@ async def log_in(**kwargs):
 
 def place_log_in_components():
     welcome_label = pygame_gui.elements.UILabel(
-        relative_rect=pygame.Rect((0, BOARD_SIZE), (250,50)),
+        relative_rect=pygame.Rect((0, BOARD_SIZE), (250, 50)),
         text="Welcome to the Conqueror V2!",
         manager=ui_manager,
-        object_id="#welcome_label"
+        object_id="#welcome_label",
     )
     player_name_input = pygame_gui.elements.UITextEntryLine(
-        relative_rect=pygame.Rect((0, BOARD_SIZE+50), (250,50)),
+        relative_rect=pygame.Rect((0, BOARD_SIZE + 50), (250, 50)),
         manager=ui_manager,
-        object_id="#player_name_input"
+        object_id="#player_name_input",
     )
 
     log_in_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((0,BOARD_SIZE+100), (250,50)),
+        relative_rect=pygame.Rect((0, BOARD_SIZE + 100), (250, 50)),
         text="Log in",
         manager=ui_manager,
-        object_id="#log_in_button"
+        object_id="#log_in_button",
     )
 
     element_visibilities[UIStages.LOG_IN][welcome_label] = True
@@ -166,11 +176,12 @@ def place_log_in_components():
 
     element_actions[log_in_button] = log_in
 
+
 def place_components():
     place_log_in_components()
 
     set_stage(UIStages.LOG_IN)
-    
+
 
 async def game_client():
     global request_manager, socket_manager, ui_manager, element_actions, screen, ui_stage
