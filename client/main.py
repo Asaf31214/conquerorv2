@@ -177,6 +177,7 @@ async def get_game_list():
     assert isinstance(game_browser, pygame_gui.elements.UIDropDownMenu)
     game_browser.add_options(game_list)
 
+
 def join_existing_game(**kwargs):
     async def inner():
         global current_game
@@ -191,6 +192,7 @@ def join_existing_game(**kwargs):
                 print(f"connected to a game: {game_id}")
 
     asyncio.gather(inner())
+
 
 def create_new_game(**kwargs):
     async def inner():
