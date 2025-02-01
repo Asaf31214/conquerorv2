@@ -126,7 +126,7 @@ async def game_loop():
 
             last_event = event
 
-        screen.fill(WHITE)
+        screen.fill(DARK_GRAY)
         window_board.draw()
         ui_manager.update(time_delta)
         ui_manager.draw_ui(screen)
@@ -153,11 +153,14 @@ def place_log_in_components():
         manager=ui_manager,
         object_id="#welcome_label",
     )
+
     player_name_input = pygame_gui.elements.UITextEntryLine(
         relative_rect=pygame.Rect((0, BOARD_SIZE + 50), (250, 50)),
         manager=ui_manager,
         object_id="#player_name_input",
+        placeholder_text="Enter your name",
     )
+    player_name_input.unfocus()
 
     log_in_button = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((0, BOARD_SIZE + 100), (250, 50)),

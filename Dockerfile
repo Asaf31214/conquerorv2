@@ -6,7 +6,6 @@ COPY . /app/
 
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir -r server/requirements.txt
-RUN pip install --no-cache-dir -r client/requirements.txt
 
 EXPOSE 8000
 
