@@ -2,6 +2,8 @@ import asyncio
 import os
 from collections import defaultdict
 
+import httpx
+
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
 import pygame
@@ -29,6 +31,8 @@ element_visibilities: Dict[UIStages, Dict[UIElement, bool]] = {
     UIStages.GAME_PLAYING: defaultdict(bool),
 }
 
+def get_element_by_id(element_id: str):
+    return [element for element in elements if element.most_specific_combined_id == element_id][0]
 
 def set_stage(UIStage):
     global ui_stage
@@ -39,7 +43,13 @@ def set_stage(UIStage):
 def update_visibilities():
     current_stage_elements = element_visibilities[ui_stage]
     for element in elements:
-        element.visible = current_stage_elements[element]
+        if current_stage_elements[element]:
+            element.visible = 1
+            element.show()
+        else:
+            element.visible = 0
+            element.hide()
+
 
 
 class WindowTile:
@@ -118,7 +128,7 @@ async def game_loop():
                     and last_event
                     and last_event.type == pygame.MOUSEBUTTONDOWN
                 ):
-                    await element_actions[event.ui_element](window_board=window_board)
+                    element_actions[event.ui_element](window_board=window_board)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
@@ -136,17 +146,27 @@ async def game_loop():
     pygame.quit()
 
 
-async def log_in(**kwargs):
+def log_in(**kwargs):
     global player_name
-    input_field = [
-        _ for _ in elements if _.most_specific_combined_id == "#player_name_input"
-    ][0]
+    input_field = get_element_by_id("#player_name_input")
     assert isinstance(input_field, pygame_gui.elements.UITextEntryLine)
     player_name = input_field.get_text()
     set_stage(UIStages.MAIN_MENU)
+    asyncio.create_task(get_game_list())
+
+async def get_game_list():
+    game_list = await request_manager.get_game_list()
+    game_browser = get_element_by_id("#game_browser")
+    assert isinstance(game_browser, pygame_gui.elements.UIDropDownMenu)
+    game_browser.kill()
+    game_browser = pygame_gui.elements.UIDropDownMenu(
+        relative_rect=pygame.Rect((0, BOARD_SIZE), (200, 50)),
+        options_list=game_list,
+        starting_option=game_list[0],
+    )
 
 
-def place_log_in_components():
+def place_log_in_elements():
     welcome_label = pygame_gui.elements.UILabel(
         relative_rect=pygame.Rect((0, BOARD_SIZE), (250, 50)),
         text="Welcome to the Conqueror V2!",
@@ -179,10 +199,22 @@ def place_log_in_components():
 
     element_actions[log_in_button] = log_in
 
+def place_main_menu_components():
+    game_browser = pygame_gui.elements.UIDropDownMenu(
+        relative_rect=pygame.Rect((0, BOARD_SIZE), (200, 50)),
+        options_list=["Select Game"],
+        starting_option="Select Game",
+        manager=ui_manager,
+        object_id="#game_browser",
+        visible=0
+    )
 
-def place_components():
-    place_log_in_components()
+    element_visibilities[UIStages.MAIN_MENU][game_browser] = True
+    elements.append(game_browser)
 
+def place_elements():
+    place_log_in_elements()
+    place_main_menu_components()
     set_stage(UIStages.LOG_IN)
 
 
@@ -195,7 +227,7 @@ async def game_client():
     pygame.init()
     ui_manager = pygame_gui.UIManager(WINDOW_SIZE)
     screen = pygame.display.set_mode(WINDOW_SIZE)
-    place_components()
+    place_elements()
     await game_loop()
 
 

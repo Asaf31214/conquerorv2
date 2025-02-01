@@ -282,7 +282,7 @@ class Result:
 class Player:
     def __init__(self, faction: Faction, name: str):
         self.faction = faction
-        self.id = f"player_{uuid.uuid4().hex}"
+        self.id = f"player_{uuid.uuid4().hex[:8]}"
         self.name = name
 
 
@@ -290,7 +290,7 @@ class Game:
     def __init__(self, board_size: int, ocean_width: int):
         self.board = Board(board_size, board_size, ocean_width)
         self.players: List[Player] = []
-        self.id = f"game_{uuid.uuid4().hex}"
+        self.id = f"game_{uuid.uuid4().hex[:8]}"
         self.turn_queue: List[Player] = []
         self.started = False
 

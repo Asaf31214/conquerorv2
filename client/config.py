@@ -1,9 +1,9 @@
 from enum import StrEnum
 
-# API_URL = "https://conquerorv2-520018356558.europe-west1.run.app"
-# WS_URL = "wss://conquerorv2-520018356558.europe-west1.run.app"
-API_URL = "http://localhost:8000"
-WS_URL = "ws://localhost:8000"
+API_URL = "https://conquerorv2-520018356558.europe-west1.run.app"
+WS_URL = "wss://conquerorv2-520018356558.europe-west1.run.app"
+# API_URL = "http://localhost:8000"
+# WS_URL = "ws://localhost:8000"
 
 
 TILE_INNER_SIZE = 45
@@ -23,5 +23,3 @@ class UIStages(StrEnum):
     GAME_PLAYING = "Game Playing"
 
 
-class Endpoints(StrEnum):
-    WS = "ws"
