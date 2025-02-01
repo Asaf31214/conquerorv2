@@ -59,8 +59,17 @@ class Metal(Resource):
         super().__init__(amount)
 
 
+corner_colors = {
+    Corner.TOP_LEFT: "blue",
+    Corner.TOP_RIGHT: "green",
+    Corner.BOTTOM_LEFT: "yellow",
+    Corner.BOTTOM_RIGHT: "red",
+}
+
+
 class Faction:
-    def __init__(self):
+    def __init__(self, color: str):
+        self.color = color
         self.resources = Resource.objectify(INITIAL_RESOURCES)
         self.controlled_tiles: List[Tile] = []
         self.unlocked_buildings: Dict[BuildingType, bool] = {
@@ -295,7 +304,7 @@ class Game:
         self.started = False
 
     def add_player(self, player_name: str, corner: Corner) -> str:
-        faction = Faction()
+        faction = Faction(corner_colors[corner])
         player = Player(faction, player_name)
         self.board.place_player(player, corner)
         self.players.append(player)
@@ -322,6 +331,7 @@ class Game:
     def get_empty_corner(self) -> Optional[Corner]:
         for corner, occupation in self.board.corner_occupations.items():
             if not occupation:
+                self.board.corner_occupations[corner] = True
                 return corner
         return None
 
@@ -521,15 +531,15 @@ class Board:
         ]
         self.corner_occupations = {
             Corner.TOP_LEFT: False,
+            Corner.BOTTOM_RIGHT: False,
             Corner.TOP_RIGHT: False,
             Corner.BOTTOM_LEFT: False,
-            Corner.BOTTOM_RIGHT: False,
         }
         self.corner_coordinates = {
             Corner.TOP_LEFT: (0, 0),
+            Corner.BOTTOM_RIGHT: (width - 1, height - 1),
             Corner.TOP_RIGHT: (width - 1, 0),
             Corner.BOTTOM_LEFT: (0, height - 1),
-            Corner.BOTTOM_RIGHT: (width - 1, height - 1),
         }
 
     def get_flattened_tiles(self):

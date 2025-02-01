@@ -31,6 +31,7 @@ element_visibilities: Dict[UIStages, Dict[UIElement, bool]] = {
     UIStages.GAME_PLAYING: defaultdict(bool),
 }
 current_game: Optional[Game] = None
+current_game_id: Optional[str] = None
 
 
 def get_element_by_id(element_id: str):
@@ -51,11 +52,17 @@ def update_visibilities():
     current_stage_elements = element_visibilities[ui_stage]
     for element in elements:
         if current_stage_elements[element]:
-            element.visible = 1
             element.show()
+            element.visible = 1
         else:
-            element.visible = 0
             element.hide()
+            element.visible = 0
+
+
+def log_error(text: str):
+    logspace_label = get_element_by_id("#logspace_label")
+    assert isinstance(logspace_label, pygame_gui.elements.UILabel)
+    logspace_label.set_text(text)
 
 
 class WindowTile:
@@ -85,20 +92,21 @@ class WindowBoard:
         self.waiting_attack = False
 
     def update_selected_tile(self, pos):
-        if tile := self.pos_to_tile(pos):
-            if not self.waiting_attack:
-                if self.selected_tiles[0] == tile:
-                    if self.selected_tiles[0]:
-                        self.selected_tiles[0].selected = False
-                        self.selected_tiles[0] = None
+        if ui_stage == UIStages.GAME_PLAYING:
+            if tile := self.pos_to_tile(pos):
+                if not self.waiting_attack:
+                    if self.selected_tiles[0] == tile:
+                        if self.selected_tiles[0]:
+                            self.selected_tiles[0].selected = False
+                            self.selected_tiles[0] = None
+                    else:
+                        if self.selected_tiles[0]:
+                            self.selected_tiles[0].selected = False
+                        self.selected_tiles[0] = tile
+                        self.selected_tiles[0].selected = True
                 else:
-                    if self.selected_tiles[0]:
-                        self.selected_tiles[0].selected = False
-                    self.selected_tiles[0] = tile
-                    self.selected_tiles[0].selected = True
-            else:
-                self.selected_tiles[1] = tile
-                tile.attacked = True
+                    self.selected_tiles[1] = tile
+                    tile.attacked = True
 
     def pos_to_tile(self, pos):
         for row in self.tiles:
@@ -118,7 +126,7 @@ class WindowBoard:
                 if current_game:
                     tile = current_game.board.tiles[y][x]
                     if tile.faction:
-                        self.tiles[y][x].color=BLUE
+                        self.tiles[y][x].color = color_map[tile.faction.color]
 
 
 async def game_loop():
@@ -188,33 +196,62 @@ async def get_game_list():
 
 def join_existing_game(**kwargs):
     window_board = kwargs["window_board"]
+
     async def inner():
-        global current_game
+        global current_game, current_game_id
         game_browser = get_element_by_id("#game_browser")
         assert isinstance(game_browser, pygame_gui.elements.UIDropDownMenu)
         game_id = game_browser.selected_option[0]
         if not game_id == "Select Game":
-            asyncio.create_task(socket_manager.connect_game_socket(game_id))
-            await request_manager.join_game(player_name, game_id)
             current_game = await request_manager.get_game(game_id)
-            if current_game:
-                print(f"connected to a game: {game_id}")
-                window_board.update_with_game_state()
+            asyncio.create_task(game_update_manager(game_id, window_board))
+            await request_manager.join_game(game_id, player_name)
+            current_game_id = game_id
+            set_stage(UIStages.GAME_LOBBY)
 
     asyncio.gather(inner())
 
 
 def create_new_game(**kwargs):
     async def inner():
-        global current_game
+        global current_game, current_game_id
+        window_board = kwargs["window_board"]
         new_game_id = await request_manager.create_game()
-        asyncio.create_task(socket_manager.connect_game_socket(new_game_id))
-        await request_manager.join_game(new_game_id, player_name)
         current_game = await request_manager.get_game(new_game_id)
-        if current_game:
-            print(f"connected to a game: {new_game_id}")
+        asyncio.create_task(game_update_manager(new_game_id, window_board))
+        await request_manager.join_game(new_game_id, player_name)
+        current_game_id = new_game_id
+        set_stage(UIStages.GAME_LOBBY)
 
     asyncio.gather(inner())
+
+
+def process_update(update: dict, window_board: WindowBoard):
+    if update["type"] == "join":
+        current_game.add_player(
+            update["details"]["player_name"], update["details"]["corner"]
+        )
+        window_board.update_with_game_state()
+
+
+async def game_update_manager(game_id: str, window_board: WindowBoard):
+    async for update in socket_manager.connect_game_socket(game_id):
+        process_update(update, window_board)
+
+
+def place_common_elements():
+    logspace_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((0, 850), (600, 50)),
+        text="",
+        manager=ui_manager,
+        object_id="#logspace_label",
+    )
+    element_visibilities[UIStages.LOG_IN][logspace_label] = True
+    element_visibilities[UIStages.MAIN_MENU][logspace_label] = True
+    element_visibilities[UIStages.GAME_LOBBY][logspace_label] = True
+    element_visibilities[UIStages.GAME_PLAYING][logspace_label] = True
+
+    elements.append(logspace_label)
 
 
 def place_log_in_elements():
@@ -295,6 +332,7 @@ def place_main_menu_components():
 
 
 def place_elements():
+    place_common_elements()
     place_log_in_elements()
     place_main_menu_components()
     set_stage(UIStages.LOG_IN)

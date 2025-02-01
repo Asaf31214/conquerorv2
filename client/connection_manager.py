@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 
@@ -59,4 +60,4 @@ class SocketManager:
         socket_url = f"{self.ws_url}/ws/{game_id}"
         async with websockets.connect(socket_url) as ws:
             async for message in ws:
-                print(f"Game update received: {message!r}")
+                yield json.loads(message)

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import pickle
 
@@ -84,6 +85,15 @@ async def add_player(request: AddPlayerRequest):
         game = games[game_id]
         if corner := game.get_empty_corner():
             player_id = game.add_player(player_name, corner)
+            asyncio.create_task(
+                manager.broadcast(
+                    data={
+                        "type": "join",
+                        "details": {"player_name": player_name, "corner": corner},
+                    },
+                    game_id=game_id,
+                )
+            )
             return {"player_id": player_id}
         else:
             return Response(content="Game is already full", status_code=400)
