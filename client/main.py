@@ -2,7 +2,7 @@ import asyncio
 import os
 from collections import defaultdict
 
-import httpx
+from common.game import Game
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
@@ -16,7 +16,7 @@ from client.colors import *
 from client.config import *
 from client.connection_manager import RequestManager, SocketManager
 
-player_name: str
+player_name: str = ""
 request_manager: RequestManager
 socket_manager: SocketManager
 ui_manager: pygame_gui.UIManager
@@ -30,6 +30,7 @@ element_visibilities: Dict[UIStages, Dict[UIElement, bool]] = {
     UIStages.GAME_LOBBY: defaultdict(bool),
     UIStages.GAME_PLAYING: defaultdict(bool),
 }
+current_game: Optional[Game] = None
 
 def get_element_by_id(element_id: str):
     return [element for element in elements if element.most_specific_combined_id == element_id][0]
@@ -151,6 +152,14 @@ def log_in(**kwargs):
     input_field = get_element_by_id("#player_name_input")
     assert isinstance(input_field, pygame_gui.elements.UITextEntryLine)
     player_name = input_field.get_text()
+    load_main_menu()
+
+
+def load_main_menu():
+    main_menu_label = get_element_by_id("#main_menu_label")
+    assert isinstance(main_menu_label, pygame_gui.elements.UILabel)
+    main_menu_label.set_text(f"Welcome {player_name}, please join a game or create a new one.")
+
     set_stage(UIStages.MAIN_MENU)
     asyncio.create_task(get_game_list())
 
@@ -158,12 +167,21 @@ async def get_game_list():
     game_list = await request_manager.get_game_list()
     game_browser = get_element_by_id("#game_browser")
     assert isinstance(game_browser, pygame_gui.elements.UIDropDownMenu)
-    game_browser.kill()
-    game_browser = pygame_gui.elements.UIDropDownMenu(
-        relative_rect=pygame.Rect((0, BOARD_SIZE), (200, 50)),
-        options_list=game_list,
-        starting_option=game_list[0],
-    )
+    game_browser.add_options(game_list)
+
+
+def create_new_game(**kwargs):
+    async def inner():
+        global current_game
+        new_game_id = await request_manager.create_game()
+        asyncio.create_task(socket_manager.connect_game_socket(new_game_id))
+        await request_manager.join_game(new_game_id, player_name)
+        current_game = await request_manager.get_game(new_game_id)
+        if current_game:
+            print(f"connected to a game: {new_game_id}")
+
+    asyncio.gather(inner())
+
 
 
 def place_log_in_elements():
@@ -200,17 +218,45 @@ def place_log_in_elements():
     element_actions[log_in_button] = log_in
 
 def place_main_menu_components():
+    main_menu_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((0, BOARD_SIZE), (600, 50)),
+        text=f"Welcome {player_name}, please join a game or create a new one.",
+        manager=ui_manager,
+        object_id="#main_menu_label",
+    )
+
     game_browser = pygame_gui.elements.UIDropDownMenu(
-        relative_rect=pygame.Rect((0, BOARD_SIZE), (200, 50)),
+        relative_rect=pygame.Rect((0, BOARD_SIZE+50), (200, 50)),
         options_list=["Select Game"],
         starting_option="Select Game",
         manager=ui_manager,
         object_id="#game_browser",
         visible=0
     )
+    join_game = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((0, BOARD_SIZE+100), (200, 50)),
+        text="Join",
+        manager=ui_manager,
+        object_id="#join",
+    )
+    create_game = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((400, BOARD_SIZE+50), (200, 50)),
+        text="Create Game",
+        manager=ui_manager,
+        object_id="#create_game",
+    )
 
+    element_visibilities[UIStages.MAIN_MENU][main_menu_label] = True
     element_visibilities[UIStages.MAIN_MENU][game_browser] = True
+    element_visibilities[UIStages.MAIN_MENU][join_game] = True
+    element_visibilities[UIStages.MAIN_MENU][create_game] = True
+
+    elements.append(main_menu_label)
     elements.append(game_browser)
+    elements.append(join_game)
+    elements.append(create_game)
+
+    element_actions[create_game] = create_new_game
 
 def place_elements():
     place_log_in_elements()
