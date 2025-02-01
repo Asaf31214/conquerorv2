@@ -177,6 +177,20 @@ async def get_game_list():
     assert isinstance(game_browser, pygame_gui.elements.UIDropDownMenu)
     game_browser.add_options(game_list)
 
+def join_existing_game(**kwargs):
+    async def inner():
+        global current_game
+        game_browser = get_element_by_id("#game_browser")
+        assert isinstance(game_browser, pygame_gui.elements.UIDropDownMenu)
+        game_id = game_browser.selected_option[0]
+        if not game_id == "Select Game":
+            asyncio.create_task(socket_manager.connect_game_socket(game_id))
+            await request_manager.join_game(player_name, game_id)
+            current_game = await request_manager.get_game(game_id)
+            if current_game:
+                print(f"connected to a game: {game_id}")
+
+    asyncio.gather(inner())
 
 def create_new_game(**kwargs):
     async def inner():
@@ -264,6 +278,7 @@ def place_main_menu_components():
     elements.append(join_game)
     elements.append(create_game)
 
+    element_actions[join_game] = join_existing_game
     element_actions[create_game] = create_new_game
 
 
