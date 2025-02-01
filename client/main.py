@@ -14,11 +14,31 @@ from client.colors import *
 from client.config import *
 from client.connection_manager import RequestManager, SocketManager
 
+player_name: str
 request_manager: RequestManager
 socket_manager: SocketManager
 ui_manager: pygame_gui.UIManager
 screen: pygame.Surface
-element_actions: Dict[UIElement, Callable] = defaultdict(lambda: lambda: None)
+ui_stage: UIStages
+elements: List[UIElement] = []
+element_actions: Dict[UIElement, Callable] = defaultdict(lambda: lambda **kwargs: None)
+element_visibilities: Dict[UIStages,Dict[UIElement, bool]] = {
+    UIStages.LOG_IN: defaultdict(bool),
+    UIStages.MAIN_MENU: defaultdict(bool),
+    UIStages.GAME_LOBBY: defaultdict(bool),
+    UIStages.GAME_PLAYING: defaultdict(bool)
+}
+
+def set_stage(UIStage):
+    global ui_stage
+    ui_stage = UIStage
+    update_visibilities()
+
+def update_visibilities():
+    current_stage_elements = element_visibilities[ui_stage]
+    for element in elements:
+        element.visible = current_stage_elements[element]
+
 
 class WindowTile:
     def __init__(self, x, y):
@@ -73,27 +93,31 @@ class WindowBoard:
                 tile.draw()
 
 
-def dummy_action():
-    print("Dummy action triggered")
-
 
 async def game_loop():
     clock = pygame.time.Clock()
     running = True
+    last_event: Optional[pygame.event.Event] = None
     window_board = WindowBoard()
+
     while running:
         time_delta = clock.tick(60) / 1000.0
+
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 running = False
+
             else:
                 ui_manager.process_events(event)
-                if event.type == pygame.USEREVENT:
-                    element_actions[event.ui_element]()
+                if event.type == pygame.USEREVENT and last_event.type == pygame.MOUSEBUTTONDOWN:
+                    await element_actions[event.ui_element](window_board=window_board)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
                     window_board.update_selected_tile(pos)
+
+            last_event = event
 
         screen.fill(WHITE)
         window_board.draw()
@@ -101,22 +125,59 @@ async def game_loop():
         ui_manager.draw_ui(screen)
         pygame.display.flip()
         await asyncio.sleep(0)
+
     pygame.quit()
 
-def place_components():
-    hello_button = pygame_gui.elements.UIDropDownMenu(
-        relative_rect=pygame.Rect((0, BOARD_SIZE), (200, 50)),
+async def log_in(**kwargs):
+    global player_name
+    input_field = [_ for _ in elements if _.most_specific_combined_id == "#player_name_input"][0]
+    assert isinstance(input_field, pygame_gui.elements.UITextEntryLine)
+    player_name = input_field.get_text()
+    set_stage(UIStages.MAIN_MENU)
+
+
+def place_log_in_components():
+    welcome_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((0, BOARD_SIZE), (250,50)),
+        text="Welcome to the Conqueror V2!",
         manager=ui_manager,
-        starting_option="Hello",
-        options_list=["Hello", "World"],
+        object_id="#welcome_label"
     )
-    element_actions[hello_button] = dummy_action
+    player_name_input = pygame_gui.elements.UITextEntryLine(
+        relative_rect=pygame.Rect((0, BOARD_SIZE+50), (250,50)),
+        manager=ui_manager,
+        object_id="#player_name_input"
+    )
+
+    log_in_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((0,BOARD_SIZE+100), (250,50)),
+        text="Log in",
+        manager=ui_manager,
+        object_id="#log_in_button"
+    )
+
+    element_visibilities[UIStages.LOG_IN][welcome_label] = True
+    element_visibilities[UIStages.LOG_IN][player_name_input] = True
+    element_visibilities[UIStages.LOG_IN][log_in_button] = True
+
+    elements.append(welcome_label)
+    elements.append(player_name_input)
+    elements.append(log_in_button)
+
+    element_actions[log_in_button] = log_in
+
+def place_components():
+    place_log_in_components()
+
+    set_stage(UIStages.LOG_IN)
+    
 
 async def game_client():
-    global request_manager, socket_manager, ui_manager, element_actions, screen
+    global request_manager, socket_manager, ui_manager, element_actions, screen, ui_stage
     load_dotenv()
     request_manager = RequestManager(API_URL)
     socket_manager = SocketManager(WS_URL)
+    ui_stage = UIStages.LOG_IN
     pygame.init()
     ui_manager = pygame_gui.UIManager(WINDOW_SIZE)
     screen = pygame.display.set_mode(WINDOW_SIZE)

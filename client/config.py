@@ -15,6 +15,11 @@ WINDOW_SIZE = (MENU_SIZE[0], MENU_SIZE[1] + BOARD_SIZE)
 
 WINDOW_TITLE = "Conqueror v2"
 
+class UIStages(StrEnum):
+    LOG_IN = "Log In"
+    MAIN_MENU = "Main Menu"
+    GAME_LOBBY = "Game Lobby"
+    GAME_PLAYING = "Game Playing"
 
 class Endpoints(StrEnum):
     WS = "ws"
