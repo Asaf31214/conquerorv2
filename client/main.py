@@ -112,6 +112,14 @@ class WindowBoard:
             for tile in row:
                 tile.draw()
 
+    def update_with_game_state(self):
+        for y in range(12):
+            for x in range(12):
+                if current_game:
+                    tile = current_game.board.tiles[y][x]
+                    if tile.faction:
+                        self.tiles[y][x].color=BLUE
+
 
 async def game_loop():
     clock = pygame.time.Clock()
@@ -179,6 +187,7 @@ async def get_game_list():
 
 
 def join_existing_game(**kwargs):
+    window_board = kwargs["window_board"]
     async def inner():
         global current_game
         game_browser = get_element_by_id("#game_browser")
@@ -190,6 +199,7 @@ def join_existing_game(**kwargs):
             current_game = await request_manager.get_game(game_id)
             if current_game:
                 print(f"connected to a game: {game_id}")
+                window_board.update_with_game_state()
 
     asyncio.gather(inner())
 
