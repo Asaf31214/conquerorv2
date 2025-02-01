@@ -21,5 +21,3 @@ class UIStages(StrEnum):
     MAIN_MENU = "Main Menu"
     GAME_LOBBY = "Game Lobby"
     GAME_PLAYING = "Game Playing"
-
-

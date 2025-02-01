@@ -1,11 +1,11 @@
 import os
 import pickle
 
+import httpx
+import websockets
 from typing_extensions import List, Optional
 
 from common.game import Game
-import httpx
-import websockets
 
 
 class RequestManager:
@@ -13,37 +13,42 @@ class RequestManager:
         self.api_url = api_url
         self.api_key = os.environ.get("API_KEY", "")
 
-    async def get_game_list(self)->List[str]:
+    async def get_game_list(self) -> List[str]:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 url=f"{self.api_url}/games",
                 headers={"x-api-key": self.api_key},
-                timeout=60)
+                timeout=60,
+            )
             return response.json()["games"]
 
-
-    async def create_game(self)->str:
+    async def create_game(self) -> str:
         async with httpx.AsyncClient() as client:
-            response = await client.post(url=f"{self.api_url}/new_game",
-                                         headers={"x-api-key": self.api_key},
-                                         json={},
-                                         timeout=60)
+            response = await client.post(
+                url=f"{self.api_url}/new_game",
+                headers={"x-api-key": self.api_key},
+                json={},
+                timeout=60,
+            )
             return response.json()["game_id"]
 
-    async def join_game(self, game_id: str, player_name: str)-> bool:
+    async def join_game(self, game_id: str, player_name: str) -> bool:
         async with httpx.AsyncClient() as client:
-            response = await client.post(url=f"{self.api_url}/add_player",
-                                         headers={"x-api-key": self.api_key},
-                                         json={"game_id": game_id, "player_name": player_name})
+            response = await client.post(
+                url=f"{self.api_url}/add_player",
+                headers={"x-api-key": self.api_key},
+                json={"game_id": game_id, "player_name": player_name},
+            )
             return response.status_code == 200
-        
+
     async def get_game(self, game_id: str) -> Optional[Game]:
         async with httpx.AsyncClient() as client:
-            response = await client.get(url=f"{self.api_url}/game_state?game_id={game_id}")
+            response = await client.get(
+                url=f"{self.api_url}/game_state?game_id={game_id}"
+            )
             if response.status_code == 200:
                 game: Game = pickle.loads(response.content)
                 return game
-
 
 
 class SocketManager:
@@ -55,4 +60,3 @@ class SocketManager:
         async with websockets.connect(socket_url) as ws:
             async for message in ws:
                 print(f"Game update received: {message!r}")
-
